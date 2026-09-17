@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Навигатор Знаний
+GenericName=Образовательный ИИ-помощник
+Comment=Обучение школьников по стандартам ФГОС методом Сократа
+Exec=AppRun %u
+Icon=navigator
+Terminal=false
+Categories=Education;Science;ComputerScience;
+StartupWMClass=navigator-znanij
+Keywords=FGOS;Education;Physics;Socrates;AI;School;RAG;
+X-AppImage-Version=1.0.0

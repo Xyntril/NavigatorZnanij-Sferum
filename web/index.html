@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Навигатор Знаний — Свободный ИИ-наставник (ФГОС • GPLv3)</title>
+    <!-- Локальная таблица стилей (полная автономность внутри AppImage, 0 CDN) -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+    <div class="app-layout" id="app-container">
+
+        <!-- ==================================================================
+             ЭКРАН 1: ОНБОРДИНГ (Приветственный экран свободного ПО)
+             ================================================================== -->
+        <section class="screen-onboarding" id="onboarding-screen">
+            <div class="onboarding-card">
+                <!-- Заголовок окна для Win98 / Aero -->
+                <div class="win-titlebar" id="onboarding-win-titlebar">
+                    <div class="win-titlebar-text">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                        <span>Мастер настройки — Навигатор Знаний [ФГОС • GPLv3]</span>
+                    </div>
+                    <div class="win-titlebar-controls">
+                        <button aria-label="Minimize">_</button>
+                        <button aria-label="Maximize">□</button>
+                        <button aria-label="Close">×</button>
+                    </div>
+                </div>
+
+                <div class="onboarding-body">
+                    <div class="onboarding-header-box">
+                        <div class="onboarding-icon-badge">
+                            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="onboarding-title">Навигатор Знаний</h1>
+                            <p class="onboarding-subtitle">Свободный ИИ-наставник по ФГОС • GNU GPLv3</p>
+                        </div>
+                    </div>
+
+                    <p class="onboarding-desc">
+                        Персональный наставник по школьной программе. Мы уважаем твои <strong>цифровые права и свободы</strong>,
+                        не передаём личные данные на внешние серверы и обучаем через <strong>метод Сократа</strong>:
+                        помогаем прийти к правильному выводу с помощью логики и понятных физических аналогий.
+                    </p>
+
+                    <!-- Блок системного предупреждения валидации -->
+                    <div class="onboarding-warning-box" id="onboarding-warning">
+                        <!-- Текст предупреждения вставляется динамически из Python -->
+                    </div>
+
+                    <form class="onboarding-form" id="onboarding-form">
+                        <div class="form-group">
+                            <label for="username-input" class="form-label">Как к тебе обращаться? (Кириллица и дефисы):</label>
+                            <input 
+                                type="text" 
+                                id="username-input" 
+                                class="text-input" 
+                                placeholder="Введи своё имя (например, Александр или Анна-Мария)..."
+                                required
+                                autocomplete="off"
+                                maxlength="40"
+                                autofocus
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Выбери тему оформления рабочего стола:</label>
+                            <div class="theme-picker-grid">
+                                <div class="theme-choice-btn selected" data-theme="dark">
+                                    <span class="theme-choice-name">Тёмная</span>
+                                    <span class="theme-choice-sub">Строгий стиль</span>
+                                </div>
+                                <div class="theme-choice-btn" data-theme="light">
+                                    <span class="theme-choice-name">Светлая</span>
+                                    <span class="theme-choice-sub">Чистый дизайн</span>
+                                </div>
+                                <div class="theme-choice-btn" data-theme="win98">
+                                    <span class="theme-choice-name">Windows 98</span>
+                                    <span class="theme-choice-sub">Ретро Проводник</span>
+                                </div>
+                                <div class="theme-choice-btn" data-theme="aero">
+                                    <span class="theme-choice-name">Windows Aero</span>
+                                    <span class="theme-choice-sub">Стекло и блики</span>
+                                </div>
+                                <div class="theme-choice-btn" data-theme="breeze">
+                                    <span class="theme-choice-name">Breeze Dark</span>
+                                    <span class="theme-choice-sub">KDE Plasma</span>
+                                </div>
+                                <div class="theme-choice-btn" data-theme="adwaita">
+                                    <span class="theme-choice-name">Libadwaita</span>
+                                    <span class="theme-choice-sub">GNOME HIG</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="start-btn" class="submit-btn">
+                            <span>Начать свободное обучение</span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <polyline points="12 5 19 12 12 19"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             ЭКРАН 2: РАБОЧАЯ ОБЛАСТЬ (САЙДБАР + ЧАТ)
+             ================================================================== -->
+        <section class="screen-chat" id="chat-screen" style="display: none;">
+            
+            <!-- Оконный заголовок (для тем Win98 и Aero) -->
+            <div class="win-titlebar" id="chat-win-titlebar">
+                <div class="win-titlebar-text">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    <span id="win-title-caption">Навигатор Знаний v1.0 [ФГОС RAG • GNU GPLv3] — Рабочая станция</span>
+                </div>
+                <div class="win-titlebar-controls">
+                    <button aria-label="Minimize">_</button>
+                    <button aria-label="Maximize">□</button>
+                    <button aria-label="Close">×</button>
+                </div>
+            </div>
+
+            <!-- Главный сплит-контейнер: Сайдбар + Чат -->
+            <div class="chat-workspace">
+
+                <!-- Боковая панель (Sidebar) с историей сессий/запросов -->
+                <aside class="app-sidebar" id="app-sidebar">
+                    <div class="sidebar-header">
+                        <div class="sidebar-brand-box">
+                            <div class="bot-avatar-box">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-5.04z"/>
+                                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-5.04z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="sidebar-brand-title">Навигатор</h3>
+                                <p class="sidebar-brand-sub">ФГОС • Сократ • GPLv3</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопка "Новый диалог" -->
+                    <button type="button" class="new-chat-btn" id="new-chat-btn" title="Начать новую тему или вопрос">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <span>Новый диалог</span>
+                    </button>
+
+                    <!-- Дерево классического Проводника для темы Windows 98 -->
+                    <div class="win98-explorer-tree" id="win98-explorer-tree">
+                        <div class="explorer-tree-item">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            <span>Мой компьютер</span>
+                        </div>
+                        <div class="explorer-tree-item indent-1">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                            <span>Диск (C:)</span>
+                        </div>
+                        <div class="explorer-tree-item indent-2">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                            <span>Запросы_ФГОС</span>
+                        </div>
+                    </div>
+
+                    <!-- Секция: История сессий / запросов -->
+                    <div class="sidebar-section-title">История сессий</div>
+                    <div class="session-history-list" id="session-history-list">
+                        <!-- Элементы истории добавляются динамически из app.js -->
+                    </div>
+
+                    <!-- Подвал сайдбара с переключателем 6 тем и инструментами -->
+                    <div class="sidebar-footer">
+                        <div class="theme-selector-wrapper">
+                            <label class="form-label" for="theme-dropdown">Тема интерфейса:</label>
+                            <select id="theme-dropdown" class="theme-dropdown" title="Выберите один из 6 стилей HIG">
+                                <option value="dark">Тёмная (Modern Dark)</option>
+                                <option value="light">Светлая (Clean Light)</option>
+                                <option value="win98">Windows 98 (Ретро-Проводник)</option>
+                                <option value="aero">Windows Aero (Windows 7)</option>
+                                <option value="breeze">Breeze Dark (KDE Plasma)</option>
+                                <option value="adwaita">Libadwaita (GNOME HIG)</option>
+                            </select>
+                        </div>
+
+                        <div class="sidebar-actions-row">
+                            <button type="button" class="sidebar-tool-btn" id="clear-chat-btn" title="Очистить текущие сообщения">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                                <span>Очистить</span>
+                            </button>
+                            <button type="button" class="sidebar-tool-btn" id="about-btn" title="О проекте, ФГОС и лицензии GNU GPLv3">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <span>О проекте</span>
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Правая часть: Просторное окно чата и поле ввода -->
+                <main class="chat-main-area">
+                    <!-- Шапка чата -->
+                    <header class="chat-header">
+                        <div class="chat-header-left">
+                            <button type="button" class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Открыть меню">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="3" y1="12" x2="21" y2="12"/>
+                                    <line x1="3" y1="6" x2="21" y2="6"/>
+                                    <line x1="3" y1="18" x2="21" y2="18"/>
+                                </svg>
+                            </button>
+                            <div>
+                                <h2 class="header-dialog-title" id="header-dialog-title">Диалог Сократа • ФГОС</h2>
+                            </div>
+                        </div>
+
+                        <div class="chat-header-right">
+                            <div class="user-status-badge" id="user-status-badge">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                <span id="current-user-label">Пользователь</span>
+                            </div>
+                            <button type="button" class="header-action-icon-btn" id="header-tux-btn" title="Свободное ПО (GNU GPLv3)">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="m4.93 4.93 4.24 4.24"/>
+                                    <path d="m14.83 9.17 4.24-4.24"/>
+                                    <path d="m14.83 14.83 4.24 4.24"/>
+                                    <path d="m9.17 14.83-4.24 4.24"/>
+                                    <circle cx="12" cy="12" r="4"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Область сообщений -->
+                    <div class="chat-messages-area" id="chat-messages-area">
+                        <div class="messages-track" id="messages-container">
+                            <!-- Сообщения рендерятся динамически через app.js -->
+                        </div>
+
+                        <!-- Индикатор набора ответа -->
+                        <div class="typing-indicator-row" id="typing-indicator" style="display: none;">
+                            <div class="bot-avatar-box">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-5.04z"/>
+                                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-5.04z"/>
+                                </svg>
+                            </div>
+                            <div class="typing-dots-box">
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Минималистичное поле ввода: кнопка прикрепления, инпут, кнопка отправки -->
+                    <footer class="chat-input-bar">
+                        <form class="chat-input-form" id="chat-form">
+                            <!-- Кнопка прикрепления файла/фото с инлайновым SVG «Скрепка» -->
+                            <button type="button" id="attach-btn" class="input-action-btn secondary" title="Прикрепить документ или снимок задачи">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l7.88-7.88"/>
+                                </svg>
+                            </button>
+
+                            <!-- Минималистичное поле ввода текста -->
+                            <textarea 
+                                id="user-input" 
+                                class="chat-textarea" 
+                                placeholder="Спроси формулу, закон или введи условие задачи (Enter для отправки)..."
+                                rows="1"
+                                autocomplete="off"
+                            ></textarea>
+
+                            <!-- Кнопка отправки с инлайновым SVG «Самолетик» -->
+                            <button type="submit" id="send-btn" class="input-action-btn primary" title="Отправить сообщение">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="m22 2-7 20-4-9-9-4Z"/>
+                                    <path d="M22 2 11 13"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </footer>
+
+                    <!-- Статус-бар для Windows 98 -->
+                    <div class="app-statusbar" id="win-statusbar">
+                        <div class="statusbar-cell">Готов к работе</div>
+                        <div class="statusbar-cell">ФГОС RAG 2026</div>
+                        <div class="statusbar-cell">GNU GPLv3</div>
+                    </div>
+                </main>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Модальное окно выбора типа прикрепляемого файла (Документ или Фото) -->
+    <div class="modal-overlay" id="attach-modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="win-titlebar-text">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l7.88-7.88"/></svg>
+                    <span>Прикрепить в свободную память</span>
+                </div>
+                <button type="button" class="header-action-icon-btn" id="close-attach-modal-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p>Выбери тип файла для открытия через нативное окно системы:</p>
+                <button type="button" id="modal-attach-doc-btn" class="submit-btn" style="width: 100%;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>Документ (PDF, DOCX, TXT, EPUB)</span>
+                </button>
+                <button type="button" id="modal-attach-photo-btn" class="submit-btn" style="width: 100%;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Снимок / Фото схемы (PNG, JPG, WEBP)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно «О проекте и философии FOSS» -->
+    <div class="modal-overlay" id="about-modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="win-titlebar-text">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span>Философия Навигатора Знаний & FOSS</span>
+                </div>
+                <button type="button" class="header-action-icon-btn" id="close-about-modal-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <strong>«Навигатор Знаний»</strong> — свободное программное обеспечение (GNU GPLv3),
+                    разработанное для глубокого понимания школьных предметов по стандартам ФГОС РФ.
+                </p>
+                <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                    <li><strong>Метод Сократа:</strong> Помогает ученику сделать самостоятельное логическое открытие, а не выдает готовую зубрежку.</li>
+                    <li><strong>Наглядные аналогии:</strong> Сложные абстрактные понятия (как $I = U / R$) объясняются физическими моделями (давление воды в трубе).</li>
+                    <li><strong>Свободные знания:</strong> Программа уважает 4 базовые свободы пользователей, работает автономно и не шпионит за учеником.</li>
+                </ul>
+                <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                    <button type="button" id="modal-ok-btn" class="submit-btn" style="padding: 8px 20px;">Понятно</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной клиентский скрипт (без сторонних зависимостей) -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1773 @@
+/**
+ * Навигатор Знаний — Глобальная таблица стилей (web/style.css)
+ * Реализует:
+ * 1. Бесшовную адаптивную сетку (Sidebar + Чат) без поломок.
+ * 2. 6 полноценных тем оформления согласно официальным HIG:
+ *    - theme-dark: Строгий современный тёмный стиль (без упоминания KDE).
+ *    - theme-light: Чистый светлый стиль с мягкими тенями.
+ *    - theme-win98: Аутентичный Windows 98 (исправленная сетка 100% высоты, сайдбар-Проводник).
+ *    - theme-aero: Windows Aero (Windows 7 UX Guide: backdrop-filter: blur(10px), стеклянные блики).
+ *    - theme-breeze: Breeze Dark (KDE Plasma HIG: точные HEX-коды, плоские элементы, #3daee9).
+ *    - theme-adwaita: Libadwaita (GNOME HIG: border-radius 9px/12px, headerbar-стиль, #3584e4).
+ */
+
+/* ==========================================================================
+   1. СБРОС И БАЗОВЫЕ ПЕРЕМЕННЫЕ
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Пасхалка: Сделай бочку */
+.barrel-roll-active {
+    animation: barrelRoll 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes barrelRoll {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Общий контейнер приложения */
+.app-layout {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ==========================================================================
+   2. ЭКРАН 1: ОНБОРДИНГ
+   ========================================================================== */
+.screen-onboarding {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.onboarding-card {
+    width: 100%;
+    max-width: 580px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.onboarding-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.onboarding-header-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.onboarding-icon-badge {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.onboarding-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.onboarding-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.onboarding-desc {
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.onboarding-warning-box {
+    display: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.text-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Сетка выбора тем (6 вариантов) */
+.theme-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.theme-choice-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.theme-choice-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.theme-choice-sub {
+    font-size: 0.72rem;
+    opacity: 0.7;
+}
+
+.submit-btn {
+    padding: 11px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+/* ==========================================================================
+   3. ЭКРАН 2: РАБОЧЕЕ ПРОСТРАНСТВО (САЙДБАР + ЧАТ)
+   ========================================================================== */
+.screen-chat {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Оконный заголовок (для Win98 / Aero) */
+.win-titlebar {
+    display: none;
+    height: 28px;
+    padding: 2px 6px;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.win-titlebar-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.win-titlebar-controls {
+    display: flex;
+    gap: 2px;
+}
+
+/* Главный сплит-контейнер */
+.chat-workspace {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* БОКОВАЯ ПАНЕЛЬ (SIDEBAR) */
+.app-sidebar {
+    width: 280px;
+    min-width: 240px;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: transform 0.25s ease;
+    z-index: 20;
+}
+
+.sidebar-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.sidebar-brand-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-brand-title {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sidebar-brand-sub {
+    font-size: 0.72rem;
+    opacity: 0.7;
+}
+
+.new-chat-btn {
+    margin: 4px 14px 12px;
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+/* Дерево Проводника для темы Win98 */
+.win98-explorer-tree {
+    display: none;
+    padding: 8px;
+    margin: 4px 10px;
+    font-size: 11px;
+    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+    flex-shrink: 0;
+}
+
+.explorer-tree-item {
+    padding: 3px 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.explorer-tree-item.indent-1 { padding-left: 14px; }
+.explorer-tree-item.indent-2 { padding-left: 26px; }
+
+/* Список истории сессий / запросов */
+.sidebar-section-title {
+    padding: 8px 16px 4px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.session-history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    font-size: 0.84rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.history-item-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.history-item-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Подвал сайдбара */
+.sidebar-footer {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.theme-selector-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.theme-dropdown {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.84rem;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+}
+
+.sidebar-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.sidebar-tool-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* ПРАВАЯ ОБЛАСТЬ: ЧАТ */
+.chat-main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Шапка чата */
+.chat-header {
+    height: 54px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+}
+
+.header-dialog-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.chat-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.header-action-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    transition: background-color 0.2s;
+}
+
+/* Просторное окно сообщений */
+.chat-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+}
+
+.messages-track {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;\n    max-width: 860px;
+    margin: 0 auto;
+}
+
+.msg-row {
+    display: flex;
+    width: 100%;
+}
+
+.msg-row.user {
+    justify-content: flex-end;
+}
+
+.msg-row.bot {
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.bot-avatar-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.chat-bubble {
+    max-width: 82%;
+    padding: 12px 16px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    position: relative;
+    word-break: break-word;
+}
+
+.chat-bubble.user {
+    border-top-right-radius: 2px;
+}
+
+.chat-bubble.bot {
+    border-top-left-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bubble-time {
+    font-size: 0.72rem;
+    opacity: 0.6;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* Математические формулы */
+.math-inline {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Карточка прикрепленного файла */
+.file-attachment-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    margin-bottom: 4px;
+}
+
+.file-icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.file-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.file-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.file-size {
+    font-size: 0.75rem;
+    opacity: 0.75;
+}
+
+/* Декоративные карточки Сократа внутри бабла */
+.socratic-card {
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.socratic-steps-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.socratic-steps-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.socratic-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+.step-circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    background: #3b82f6;
+    color: #fff;
+}
+
+.analogy-card {
+    border-left: 3px solid #3b82f6;
+    padding: 8px 12px;
+}
+
+.socratic-question-card {
+    border-left: 3px solid #f59e0b;
+    padding: 8px 12px;
+    font-weight: 500;
+}
+
+.source-tag {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ASCII Tux */
+pre.tux-ascii {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.8rem;
+    line-height: 1.15;
+    white-space: pre;
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+/* Индикатор набора */
+.typing-indicator-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.typing-dots-box {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: 12px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: typingBounce 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* МИНИМАЛИСТИЧНОЕ ПОЛЕ ВВОДА */
+.chat-input-bar {
+    padding: 12px 20px;
+    flex-shrink: 0;
+}
+
+.chat-input-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.input-action-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.chat-textarea {
+    flex: 1;
+    min-height: 40px;
+    max-height: 120px;
+    padding: 9px 14px;
+    font-family: inherit;
+    font-size: 0.94rem;
+    line-height: 1.4;
+    resize: none;
+    outline: none;
+    border: 1px solid transparent;
+}
+
+/* Статус-бар */
+.app-statusbar {
+    display: none;
+    height: 22px;
+    padding: 2px 8px;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.statusbar-cell {
+    padding: 0 4px;
+}
+
+/* Модальное окно */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-dialog {
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-body {
+    padding: 18px 20px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ==========================================================================
+   4. СИСТЕМА ТЕМ ОФОРМЛЕНИЯ (6 СТИЛЕЙ ПО HIG)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   ТЕМА 1: ТЁМНАЯ (theme-dark)
+   Строгий, современный темный дизайн. Без упоминания KDE.
+   -------------------------------------------------------------------------- */
+body.theme-dark {
+    background-color: #0b0f19;
+    color: #f8fafc;
+}
+
+body.theme-dark .screen-onboarding {
+    background: radial-gradient(circle at top, #1e293b, #0b0f19);
+}
+
+body.theme-dark .onboarding-card,
+body.theme-dark .modal-dialog {
+    background: #131b2e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+body.theme-dark .onboarding-icon-badge {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+body.theme-dark .onboarding-warning-box {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+}
+
+body.theme-dark .text-input,
+body.theme-dark .theme-dropdown,
+body.theme-dark .chat-textarea {
+    background: #0b0f19;
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+}
+
+body.theme-dark .text-input:focus,
+body.theme-dark .chat-textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+body.theme-dark .theme-choice-btn {
+    background: #1a233a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: #f8fafc;
+}
+
+body.theme-dark .theme-choice-btn.selected {
+    background: #2563eb;
+    border-color: #60a5fa;
+    color: #ffffff;
+}
+
+body.theme-dark .submit-btn,
+body.theme-dark .new-chat-btn,
+body.theme-dark .input-action-btn.primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 8px;
+    border: none;
+}
+
+body.theme-dark .submit-btn:hover,
+body.theme-dark .new-chat-btn:hover,
+body.theme-dark .input-action-btn.primary:hover {
+    background: #1d4ed8;
+}
+
+body.theme-dark .app-sidebar {
+    background: #111827;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.theme-dark .chat-header {
+    background: #111827;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.theme-dark .chat-messages-area {
+    background: #0b0f19;
+}
+
+body.theme-dark .history-item {
+    border-radius: 6px;
+    color: #94a3b8;
+}
+
+body.theme-dark .history-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #f8fafc;
+}
+
+body.theme-dark .history-item.active {
+    background: rgba(37, 99, 235, 0.2);
+    color: #60a5fa;
+    border-left: 3px solid #3b82f6;
+}
+
+body.theme-dark .sidebar-tool-btn,
+body.theme-dark .input-action-btn.secondary {
+    background: #1e293b;
+    color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.theme-dark .user-status-badge {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+}
+
+body.theme-dark .bot-avatar-box {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+body.theme-dark .chat-bubble.user {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #ffffff;
+    border-radius: 12px;
+}
+
+body.theme-dark .chat-bubble.bot {
+    background: #172033;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+    border-radius: 12px;
+}
+
+body.theme-dark .socratic-card {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body.theme-dark pre.tux-ascii {
+    background: #070a12;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #38bdf8;
+}
+
+body.theme-dark .typing-dots-box {
+    background: #172033;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.theme-dark .typing-dot {
+    background: #60a5fa;
+}
+
+/* --------------------------------------------------------------------------
+   ТЕМА 2: СВЕТЛАЯ (theme-light)
+   Чистый белый/светло-серый фон, темный текст, мягкие тени от карточек.
+   -------------------------------------------------------------------------- */
+body.theme-light {
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+
+body.theme-light .screen-onboarding {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+}
+
+body.theme-light .onboarding-card,
+body.theme-light .modal-dialog {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .onboarding-icon-badge {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+body.theme-light .onboarding-warning-box {
+    background: #fee2e2;
+    border: 1px solid #f87171;
+    color: #991b1b;
+}
+
+body.theme-light .text-input,
+body.theme-light .theme-dropdown,
+body.theme-light .chat-textarea {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+}
+
+body.theme-light .text-input:focus,
+body.theme-light .chat-textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+body.theme-light .theme-choice-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #0f172a;
+}
+
+body.theme-light .theme-choice-btn.selected {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+}
+
+body.theme-light .submit-btn,
+body.theme-light .new-chat-btn,
+body.theme-light .input-action-btn.primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+body.theme-light .submit-btn:hover,
+body.theme-light .new-chat-btn:hover,
+body.theme-light .input-action-btn.primary:hover {
+    background: #1d4ed8;
+}
+
+body.theme-light .app-sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+}
+
+body.theme-light .chat-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.theme-light .chat-messages-area {
+    background: #f8fafc;
+}
+
+body.theme-light .history-item {
+    border-radius: 6px;
+    color: #475569;
+}
+
+body.theme-light .history-item:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+body.theme-light .history-item.active {
+    background: #eff6ff;
+    color: #2563eb;
+    border-left: 3px solid #2563eb;
+    font-weight: 600;
+}
+
+body.theme-light .sidebar-tool-btn,
+body.theme-light .input-action-btn.secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+body.theme-light .user-status-badge {
+    background: #e2e8f0;
+    border-radius: 20px;
+    color: #1e293b;
+}
+
+body.theme-light .bot-avatar-box {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+body.theme-light .chat-bubble.user {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+}
+
+body.theme-light .chat-bubble.bot {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .socratic-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+body.theme-light pre.tux-ascii {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+}
+
+body.theme-light .typing-dots-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .typing-dot {
+    background: #2563eb;
+}
+
+/* --------------------------------------------------------------------------
+   ТЕМА 3: WINDOWS 98 (theme-win98)
+   Полноценная ретро-тема. Чат на 100% высоты, сайдбар под Проводник.
+   -------------------------------------------------------------------------- */
+body.theme-win98 {
+    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+    font-size: 11px;
+    background-color: #008080;
+    color: #000000;
+}
+
+body.theme-win98 .win-titlebar {
+    display: flex;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: #ffffff;
+    border: none;
+}
+
+body.theme-win98 .win-titlebar button {
+    width: 16px;
+    height: 14px;
+    font-size: 9px;
+    line-height: 10px;
+    padding: 0;
+    border: none;
+    background: #c0c0c0;
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+    color: #000;
+}
+
+body.theme-win98 .screen-onboarding {
+    background-color: #008080;
+}
+
+body.theme-win98 .onboarding-card,
+body.theme-win98 .modal-dialog,
+body.theme-win98 .screen-chat {
+    background: #c0c0c0;
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #dfdfdf, inset -2px -2px grey, inset 2px 2px #fff;
+    padding: 3px;
+    border-radius: 0;
+}
+
+body.theme-win98 .screen-chat {
+    position: absolute;
+    inset: 4px;
+    width: auto;
+    height: auto;
+}
+
+body.theme-win98 .onboarding-icon-badge {
+    display: none;
+}
+
+body.theme-win98 .onboarding-warning-box {
+    background: #fff;
+    border: 2px solid #800000;
+    color: #800000;
+    padding: 4px 8px;
+}
+
+body.theme-win98 .text-input,
+body.theme-win98 .theme-dropdown,
+body.theme-win98 .chat-textarea {
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    border-radius: 0;
+    padding: 4px 6px;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+body.theme-win98 button,
+body.theme-win98 .theme-choice-btn,
+body.theme-win98 .submit-btn,
+body.theme-win98 .new-chat-btn,
+body.theme-win98 .sidebar-tool-btn,
+body.theme-win98 .input-action-btn {
+    border: none;
+    border-radius: 0;
+    background: #c0c0c0;
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+    color: #000000;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+body.theme-win98 button:active,
+body.theme-win98 .submit-btn:active,
+body.theme-win98 .new-chat-btn:active,
+body.theme-win98 .input-action-btn:active,
+body.theme-win98 .theme-choice-btn.selected {
+    box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey;
+    background: #e0e0e0;
+}
+
+/* Сайдбар-Проводник */
+body.theme-win98 .app-sidebar {
+    background: #c0c0c0;
+    border-right: 2px solid #808080;
+}
+
+body.theme-win98 .win98-explorer-tree {
+    display: flex;
+    flex-direction: column;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    background: #ffffff;
+    margin: 4px 10px;
+    padding: 4px;
+}
+
+body.theme-win98 .session-history-list {
+    margin: 4px 10px;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    background: #ffffff;
+}
+
+body.theme-win98 .history-item {
+    border-radius: 0;
+    color: #000000;
+    padding: 4px 6px;
+    font-size: 11px;
+}
+
+body.theme-win98 .history-item:hover {
+    background: #000080;
+    color: #ffffff;
+}
+
+body.theme-win98 .history-item.active {
+    background: #000080;
+    color: #ffffff;
+}
+
+body.theme-win98 .chat-header {
+    background: #c0c0c0;
+    border-bottom: 2px solid #808080;
+    height: 38px;
+}
+
+body.theme-win98 .user-status-badge {
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey;
+    background: #c0c0c0;
+    border-radius: 0;
+    font-size: 11px;
+}
+
+body.theme-win98 .chat-messages-area {
+    background: #ffffff;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    margin: 4px;
+    padding: 10px;
+}
+
+body.theme-win98 .chat-bubble.user {
+    background: #000080;
+    color: #ffffff;
+    border-radius: 0;
+    border: 1px solid #000000;
+}
+
+body.theme-win98 .chat-bubble.bot {
+    background: #f0f0f0;
+    border: 1px solid #808080;
+    border-radius: 0;
+    color: #000000;
+    box-shadow: 1px 1px 0px #000;
+}
+
+body.theme-win98 .bot-avatar-box {
+    background: #000080;
+    color: #ffffff;
+    border-radius: 0;
+}
+
+body.theme-win98 .socratic-card {
+    background: #e4e4e4;
+    border: 1px solid #808080;
+    border-radius: 0;
+}
+
+body.theme-win98 pre.tux-ascii {
+    background: #ffffff;
+    border: 1px solid #000000;
+    color: #000000;
+    border-radius: 0;
+}
+
+body.theme-win98 .chat-input-bar {
+    background: #c0c0c0;
+    padding: 6px 4px 2px;
+}
+
+body.theme-win98 .app-statusbar {
+    display: flex;
+    background: #c0c0c0;
+    border-top: 1px solid #ffffff;
+}
+
+body.theme-win98 .statusbar-cell {
+    box-shadow: inset -1px -1px #dfdfdf, inset 1px 1px grey;
+    flex-grow: 1;
+}
+
+/* --------------------------------------------------------------------------
+   ТЕМА 4: WINDOWS AERO (theme-aero)
+   Windows 7 UX Guide: backdrop-filter: blur(10px), стеклянные блики и границы.
+   -------------------------------------------------------------------------- */
+body.theme-aero {
+    background: linear-gradient(135deg, #0d3856 0%, #155584 45%, #2481b8 100%);
+    color: #ffffff;
+}
+
+body.theme-aero .win-titlebar {
+    display: flex;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(220, 240, 255, 0.05) 51%, rgba(255, 255, 255, 0.25) 100%), rgba(20, 70, 110, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+body.theme-aero .win-titlebar button {
+    width: 28px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 3px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+body.theme-aero .onboarding-card,
+body.theme-aero .modal-dialog {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 49%, rgba(180, 225, 255, 0.05) 50%, rgba(255, 255, 255, 0.2) 100%), rgba(15, 55, 90, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 16px 36px rgba(0, 20, 45, 0.5);
+}
+
+body.theme-aero .onboarding-icon-badge {
+    background: linear-gradient(180deg, #42b6ff, #0078d7);
+    box-shadow: 0 0 12px rgba(66, 182, 255, 0.6);
+}
+
+body.theme-aero .text-input,
+body.theme-aero .theme-dropdown,
+body.theme-aero .chat-textarea {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-aero .text-input::placeholder,
+body.theme-aero .chat-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+body.theme-aero .theme-choice-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 4px;
+    color: #ffffff;
+}
+
+body.theme-aero .theme-choice-btn.selected {
+    background: linear-gradient(180deg, #50c0ff, #0072c6);
+    border-color: #ffffff;
+    box-shadow: 0 0 8px rgba(80, 192, 255, 0.8);
+}
+
+body.theme-aero .submit-btn,
+body.theme-aero .new-chat-btn,
+body.theme-aero .input-action-btn.primary {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(30, 144, 255, 0.6) 51%, rgba(0, 120, 215, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 4px;
+    color: #ffffff;
+    box-shadow: inset 0 1px 0 #ffffff, 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-aero .app-sidebar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(200, 230, 255, 0.04) 51%, rgba(255, 255, 255, 0.15) 100%), rgba(10, 40, 70, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+body.theme-aero .chat-header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.15) 100%), rgba(15, 50, 80, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+body.theme-aero .chat-messages-area {
+    background: rgba(10, 30, 50, 0.35);
+}
+
+body.theme-aero .history-item {
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid transparent;
+}
+
+body.theme-aero .history-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+body.theme-aero .history-item.active {
+    background: linear-gradient(180deg, rgba(80, 192, 255, 0.4), rgba(0, 114, 198, 0.6));
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 6px rgba(80, 192, 255, 0.5);
+}
+
+body.theme-aero .sidebar-tool-btn,
+body.theme-aero .input-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    color: #ffffff;
+}
+
+body.theme-aero .user-status-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+}
+
+body.theme-aero .bot-avatar-box {
+    background: linear-gradient(180deg, #42b6ff, #0078d7);
+    box-shadow: 0 0 8px rgba(66, 182, 255, 0.6);
+}
+
+body.theme-aero .chat-bubble.user {
+    background: linear-gradient(180deg, rgba(80, 190, 255, 0.7), rgba(0, 110, 200, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+body.theme-aero .chat-bubble.bot {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.2) 100%), rgba(20, 60, 95, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+body.theme-aero .socratic-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.theme-aero pre.tux-ascii {
+    background: rgba(0, 20, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #60c5ff;
+}
+
+/* --------------------------------------------------------------------------
+   ТЕМА 5: BREEZE DARK (theme-breeze)
+   KDE Plasma HIG: точные HEX-коды, плоские элементы, синий акцент #3daee9.
+   -------------------------------------------------------------------------- */
+body.theme-breeze {
+    background-color: #232629;
+    color: #eff0f1;
+}
+
+body.theme-breeze .onboarding-card,
+body.theme-breeze .modal-dialog {
+    background: #31363b;
+    border: 1px solid #1b1e20;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+body.theme-breeze .onboarding-icon-badge {
+    background: #3daee9;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+body.theme-breeze .text-input,
+body.theme-breeze .theme-dropdown,
+body.theme-breeze .chat-textarea {
+    background: #232629;
+    color: #eff0f1;
+    border: 1px solid #3a3f44;
+    border-radius: 4px;
+}
+
+body.theme-breeze .text-input:focus,
+body.theme-breeze .chat-textarea:focus {
+    border-color: #3daee9;
+    box-shadow: 0 0 0 1px #3daee9;
+}
+
+body.theme-breeze .theme-choice-btn {
+    background: #31363b;
+    border: 1px solid #1b1e20;
+    border-radius: 4px;
+    color: #eff0f1;
+}
+
+body.theme-breeze .theme-choice-btn.selected {
+    background: #3daee9;
+    border-color: #3daee9;
+    color: #ffffff;
+}
+
+body.theme-breeze .submit-btn,
+body.theme-breeze .new-chat-btn,
+body.theme-breeze .input-action-btn.primary {
+    background: #3daee9;
+    color: #ffffff;
+    border: 1px solid #2980b9;
+    border-radius: 4px;
+}
+
+body.theme-breeze .submit-btn:hover,
+body.theme-breeze .new-chat-btn:hover,
+body.theme-breeze .input-action-btn.primary:hover {
+    background: #2980b9;
+}
+
+body.theme-breeze .app-sidebar {
+    background: #2a2e32;
+    border-right: 1px solid #1b1e20;
+}
+
+body.theme-breeze .chat-header {
+    background: #2a2e32;
+    border-bottom: 1px solid #1b1e20;
+}
+
+body.theme-breeze .chat-messages-area {
+    background: #232629;
+}
+
+body.theme-breeze .history-item {
+    border-radius: 4px;
+    color: #bdc3c7;
+}
+
+body.theme-breeze .history-item:hover {
+    background: #31363b;
+    color: #eff0f1;
+}
+
+body.theme-breeze .history-item.active {
+    background: #31363b;
+    color: #3daee9;
+    border-left: 3px solid #3daee9;
+}
+
+body.theme-breeze .sidebar-tool-btn,
+body.theme-breeze .input-action-btn.secondary {
+    background: #31363b;
+    border: 1px solid #1b1e20;
+    border-radius: 4px;
+    color: #eff0f1;
+}
+
+body.theme-breeze .user-status-badge {
+    background: #31363b;
+    border: 1px solid #1b1e20;
+    border-radius: 4px;
+}
+
+body.theme-breeze .bot-avatar-box {
+    background: #3daee9;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+body.theme-breeze .chat-bubble.user {
+    background: #3daee9;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+body.theme-breeze .chat-bubble.bot {
+    background: #31363b;
+    border: 1px solid #3a3f44;
+    color: #eff0f1;
+    border-radius: 4px;
+}
+
+body.theme-breeze .socratic-card {
+    background: #2a2e32;
+    border: 1px solid #1b1e20;
+}
+
+body.theme-breeze pre.tux-ascii {
+    background: #1b1e20;
+    border: 1px solid #3a3f44;
+    color: #3daee9;
+}
+
+/* --------------------------------------------------------------------------
+   ТЕМА 6: LIBADWAITA (theme-adwaita)
+   GNOME HIG: border-radius 9px / 12px, headerbar-стиль кнопок, #3584e4.
+   -------------------------------------------------------------------------- */
+body.theme-adwaita {
+    background-color: #242424;
+    color: #ffffff;
+}
+
+body.theme-adwaita .onboarding-card,
+body.theme-adwaita .modal-dialog {
+    background: #303030;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+body.theme-adwaita .onboarding-icon-badge {
+    background: #3584e4;
+    color: #ffffff;
+    border-radius: 9px;
+}
+
+body.theme-adwaita .text-input,
+body.theme-adwaita .theme-dropdown,
+body.theme-adwaita .chat-textarea {
+    background: #242424;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+}
+
+body.theme-adwaita .text-input:focus,
+body.theme-adwaita .chat-textarea:focus {
+    border-color: #3584e4;
+    box-shadow: 0 0 0 2px rgba(53, 132, 228, 0.35);
+}
+
+body.theme-adwaita .theme-choice-btn {
+    background: #383838;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 9px;
+    color: #ffffff;
+}
+
+body.theme-adwaita .theme-choice-btn.selected {
+    background: #3584e4;
+    border-color: #3584e4;
+    color: #ffffff;
+}
+
+body.theme-adwaita .submit-btn,
+body.theme-adwaita .new-chat-btn,
+body.theme-adwaita .input-action-btn.primary {
+    background: #3584e4;
+    color: #ffffff;
+    border-radius: 9px;
+    border: none;
+}
+
+body.theme-adwaita .submit-btn:hover,
+body.theme-adwaita .new-chat-btn:hover,
+body.theme-adwaita .input-action-btn.primary:hover {
+    background: #1c71d8;
+}
+
+body.theme-adwaita .app-sidebar {
+    background: #303030;
+    border-right: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+body.theme-adwaita .chat-header {
+    background: #303030;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+body.theme-adwaita .chat-messages-area {
+    background: #242424;
+}
+
+body.theme-adwaita .history-item {
+    border-radius: 9px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+body.theme-adwaita .history-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+body.theme-adwaita .history-item.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+body.theme-adwaita .sidebar-tool-btn,
+body.theme-adwaita .input-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-radius: 9px;
+    border: none;
+}
+
+body.theme-adwaita .sidebar-tool-btn:hover,
+body.theme-adwaita .input-action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-adwaita .user-status-badge {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 9999px; /* Pill-шейп Libadwaita */
+}
+
+body.theme-adwaita .bot-avatar-box {
+    background: #3584e4;
+    color: #ffffff;
+    border-radius: 9px;
+}
+
+body.theme-adwaita .chat-bubble.user {
+    background: #3584e4;
+    color: #ffffff;
+    border-radius: 12px;
+}
+
+body.theme-adwaita .chat-bubble.bot {
+    background: #303030;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    border-radius: 12px;
+}
+
+body.theme-adwaita .socratic-card {
+    background: #242424;
+    border-radius: 9px;
+}
+
+body.theme-adwaita pre.tux-ascii {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #78aeed;
+    border-radius: 9px;
+}
+
+/* ==========================================================================
+   5. МОБИЛЬНАЯ АДАПТАЦИЯ (<= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: flex;
+    }
+
+    .app-sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .app-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .chat-bubble {
+        max-width: 100%;
+    }
+
+    .chat-messages-area {
+        padding: 12px 14px;
+    }
+
+    .theme-picker-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

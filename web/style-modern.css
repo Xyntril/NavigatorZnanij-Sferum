@@ -1,0 +1,1148 @@
+/* ==========================================================================
+   KDE Kirigami Modern Theme — «Навигатор Знаний» (FOSS Edition)
+   Концепция:
+   - Адаптивный фреймворк KDE Kirigami (Desktop: Боковое меню + широкая область; Mobile: Нижний Nav-bar)
+   - Анимированный переливающийся градиент на фоне
+   - Glassmorphism для карточек и панелей (backdrop-filter)
+   - Динамическое масштабирование clamp() для шрифтов, отступов и сеток
+   - Полноэкранные баблы на мобильных устройствах (@media max-width: 768px)
+   ========================================================================== */
+
+:root {
+    /* Цветовая палитра KDE Breeze / Neon Dark */
+    --bg-grad-1: #070B14;
+    --bg-grad-2: #120F2D;
+    --bg-grad-3: #0B1D3A;
+    --bg-grad-4: #1F103F;
+    --bg-grad-5: #0A1326;
+
+    --glass-bg: rgba(22, 28, 48, 0.72);
+    --glass-bg-hover: rgba(33, 42, 71, 0.85);
+    --glass-card: rgba(18, 24, 43, 0.82);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border-subtle: rgba(255, 255, 255, 0.05);
+
+    /* KDE Kirigami Brand Accents */
+    --kirigami-primary: #3DAEE9;       /* Breeze Cyan */
+    --kirigami-indigo: #6366F1;        /* Modern Indigo */
+    --kirigami-purple: #9B59B6;        /* Kirigami Violet */
+    --kirigami-success: #2ECC71;       /* Emerald */
+    --kirigami-warning: #F39C12;       /* Amber */
+    --kirigami-danger: #E74C3C;        /* Coral */
+
+    --primary-gradient: linear-gradient(135deg, #2A75D3 0%, #6366F1 50%, #8B5CF6 100%);
+    --user-bubble-grad: linear-gradient(135deg, #1D6FD8 0%, #4F46E5 100%);
+
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --text-white: #FFFFFF;
+
+    /* Динамические отступы и радиусы через clamp() */
+    --space-xs: clamp(4px, 0.6vw, 8px);
+    --space-sm: clamp(8px, 1.2vw, 14px);
+    --space-md: clamp(12px, 1.8vw, 20px);
+    --space-lg: clamp(18px, 2.5vw, 32px);
+    --space-xl: clamp(24px, 3.5vw, 48px);
+
+    /* Динамическая типографика через clamp() */
+    --font-xs: clamp(0.7rem, 0.9vw, 0.8rem);
+    --font-sm: clamp(0.8rem, 1.0vw, 0.92rem);
+    --font-base: clamp(0.92rem, 1.2vw, 1.05rem);
+    --font-md: clamp(1.05rem, 1.5vw, 1.25rem);
+    --font-lg: clamp(1.25rem, 2.0vw, 1.65rem);
+    --font-xl: clamp(1.6rem, 2.8vw, 2.2rem);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 9999px;
+
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 24px rgba(61, 174, 233, 0.3);
+
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+    --font-mono: "Fira Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Базовый сброс */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--font-base);
+    color: var(--text-primary);
+    background: linear-gradient(-45deg, var(--bg-grad-1), var(--bg-grad-2), var(--bg-grad-3), var(--bg-grad-4), var(--bg-grad-5));
+    background-size: 400% 400%;
+    animation: gradientFlow 20s ease infinite;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Переливающийся анимированный градиент фона */
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Пасхалка 3: «Сделай бочку» (Do a barrel roll) */
+.barrel-roll-active {
+    animation: barrelRoll 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards !important;
+}
+
+@keyframes barrelRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(0.92); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Оболочка всего экрана */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ==========================================================================
+   ЭКРАН 1: ОНБОРДИНГ (Приветственный экран)
+   ========================================================================== */
+.screen-onboarding {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-md);
+    z-index: 30;
+    backdrop-filter: blur(12px);
+}
+
+.onboarding-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-glass), var(--shadow-glow);
+    max-width: 520px;
+    width: 100%;
+    padding: clamp(24px, 4vw, 44px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+    animation: kirigamiFadeIn 0.35s ease;
+}
+
+.onboarding-logo {
+    width: clamp(60px, 8vw, 84px);
+    height: clamp(60px, 8vw, 84px);
+    border-radius: var(--radius-md);
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    color: var(--text-white);
+    box-shadow: 0 8px 24px rgba(61, 174, 233, 0.4);
+}
+
+.onboarding-title {
+    font-size: var(--font-xl);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #FFFFFF 0%, #93C5FD 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.onboarding-desc {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-top: -6px;
+}
+
+.foss-onboarding-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    color: var(--kirigami-success);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+}
+
+.onboarding-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    text-align: left;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.form-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.glass-input {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: clamp(10px, 1.5vw, 15px) clamp(14px, 1.8vw, 20px);
+    font-size: var(--font-base);
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+    border-color: var(--kirigami-primary);
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 3px rgba(61, 174, 233, 0.25);
+}
+
+.theme-selector-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+}
+
+.theme-card-option {
+    background: rgba(15, 23, 42, 0.55);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: clamp(10px, 1.5vw, 16px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-card-option:hover {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.theme-card-option.selected {
+    border-color: var(--kirigami-primary);
+    background: rgba(61, 174, 233, 0.15);
+    box-shadow: 0 0 16px rgba(61, 174, 233, 0.35);
+}
+
+.theme-icon {
+    font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+}
+
+.theme-name {
+    font-size: var(--font-sm);
+    font-weight: 700;
+}
+
+.theme-sub {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+}
+
+.primary-button {
+    background: var(--primary-gradient);
+    color: var(--text-white);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: clamp(11px, 1.5vw, 15px) clamp(20px, 2.5vw, 32px);
+    font-size: var(--font-base);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(42, 117, 211, 0.4);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(42, 117, 211, 0.6);
+    filter: brightness(1.08);
+}
+
+/* ==========================================================================
+   ЭКРАН 2: АДАПТИВНЫЙ ЧАТ В СТИЛЕ KDE KIRIGAMI
+   CSS Grid Layout: [Sidebar: 280px] + [Main Chat: 1fr]
+   ========================================================================== */
+.screen-chat {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: minmax(240px, 280px) 1fr;
+    height: 100vh;
+    width: 100vw;
+    background: transparent;
+    z-index: 10;
+}
+
+/* ==========================================================================
+   KDE Kirigami Sidebar (Десктопная боковая панель)
+   ========================================================================== */
+.kirigami-sidebar {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-md);
+    overflow-y: auto;
+    z-index: 15;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.sidebar-logo-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(61, 174, 233, 0.35);
+}
+
+.sidebar-brand h3 {
+    font-size: var(--font-base);
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.sidebar-brand p {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+}
+
+/* Секции бокового меню Kirigami */
+.sidebar-section {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.sidebar-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding-left: 6px;
+    margin-bottom: 4px;
+}
+
+.sidebar-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    padding: 9px 12px;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.sidebar-nav-btn i {
+    font-size: 1.05rem;
+    color: var(--kirigami-primary);
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-color: var(--glass-border);
+    transform: translateX(3px);
+}
+
+.sidebar-nav-btn.active {
+    background: rgba(61, 174, 233, 0.16);
+    color: #FFFFFF;
+    border-color: rgba(61, 174, 233, 0.35);
+}
+
+.sidebar-foss-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-top: auto;
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sidebar-foss-title {
+    font-weight: 700;
+    color: var(--kirigami-success);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ==========================================================================
+   Главная область чата (KDE Kirigami Main Area)
+   ========================================================================== */
+.kirigami-main-area {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Верхняя шапка чата */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(10px, 1.5vw, 16px) clamp(16px, 2.5vw, 32px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bot-avatar-badge {
+    position: relative;
+    width: 42px;
+    height: 42px;
+}
+
+.bot-avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--text-white);
+    box-shadow: 0 4px 14px rgba(61, 174, 233, 0.4);
+}
+
+.status-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 11px;
+    height: 11px;
+    background-color: var(--kirigami-success);
+    border: 2px solid #0F172A;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.9);
+}
+
+.header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-title {
+    font-size: var(--font-md);
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.badge-fgos {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: var(--radius-pill);
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: var(--kirigami-success);
+    font-size: var(--font-xs);
+    font-weight: 700;
+}
+
+.header-subtitle {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.glass-action-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    font-size: var(--font-xs);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.glass-action-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+/* Область сообщений */
+.chat-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: clamp(14px, 2vw, 24px) clamp(12px, 2.5vw, 32px);
+    display: flex;
+    flex-direction: column;
+    scroll-behavior: smooth;
+}
+
+.chat-messages-area::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages-area::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+}
+
+.messages-track {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 1.8vw, 20px);
+    max-width: 920px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Строки сообщений */
+.msg-row {
+    display: flex;
+    width: 100%;
+    animation: kirigamiFadeIn 0.25s ease;
+}
+
+.msg-row.user {
+    justify-content: flex-end;
+}
+
+.msg-row.bot {
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+.msg-bot-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--text-white);
+    flex-shrink: 0;
+    align-self: flex-end;
+    box-shadow: 0 3px 10px rgba(61, 174, 233, 0.35);
+}
+
+/* Бабл пользователя */
+.bubble-user-glass {
+    max-width: 78%;
+    padding: clamp(10px, 1.4vw, 15px) clamp(14px, 1.8vw, 20px);
+    background: var(--user-bubble-grad);
+    color: var(--text-white);
+    border-radius: 18px 18px 4px 18px;
+    box-shadow: 0 4px 20px rgba(29, 111, 216, 0.35);
+    font-size: var(--font-base);
+    word-break: break-word;
+}
+
+.bubble-user-glass .msg-time {
+    font-size: var(--font-xs);
+    opacity: 0.75;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* Бабл бота */
+.bubble-bot-glass {
+    max-width: 88%;
+    background: var(--glass-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px 18px 18px 4px;
+    padding: clamp(14px, 2vw, 22px);
+    box-shadow: var(--shadow-glass);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.bot-body-text {
+    font-size: var(--font-base);
+    color: #F1F5F9;
+    line-height: 1.6;
+}
+
+.bot-body-text code.math-inline {
+    background: rgba(61, 174, 233, 0.18);
+    border: 1px solid rgba(61, 174, 233, 0.4);
+    color: #7DD3FC;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+/* ASCII Tux арт */
+.bot-body-text pre.tux-ascii {
+    background: rgba(10, 15, 30, 0.85);
+    border: 1px solid rgba(61, 174, 233, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: #38BDF8;
+    font-family: var(--font-mono);
+    font-size: var(--font-xs);
+    line-height: 1.25;
+    margin: 10px 0;
+    overflow-x: auto;
+}
+
+/* Карточки шагов Сократа */
+.socratic-steps-card {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.steps-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--kirigami-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: var(--font-sm);
+}
+
+.step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--kirigami-primary);
+    color: #000;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Карточка аналогии (вода в трубе) */
+.analogy-box {
+    background: rgba(61, 174, 233, 0.08);
+    border-left: 4px solid var(--kirigami-primary);
+    border-radius: 4px var(--radius-sm) var(--radius-sm) 4px;
+    padding: var(--space-sm);
+    display: flex;
+    gap: 12px;
+}
+
+.analogy-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.analogy-text h4 {
+    font-size: var(--font-sm);
+    font-weight: 700;
+    color: #38BDF8;
+    margin-bottom: 4px;
+}
+
+.analogy-text p {
+    font-size: var(--font-sm);
+    color: #BAE6FD;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* Карточка наводящего вопроса Сократа */
+.socratic-question-box {
+    background: rgba(155, 89, 182, 0.12);
+    border: 1px dashed rgba(155, 89, 182, 0.5);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.question-symbol {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.question-content h4 {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: #D8B4FE;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+.question-content p {
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: #FAF5FF;
+}
+
+/* Карточка прикрепленного файла */
+.file-attachment-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+}
+
+.file-attachment-card.document {
+    border-left: 4px solid var(--kirigami-primary);
+}
+
+.file-attachment-card.photo {
+    border-left: 4px solid #EC4899;
+}
+
+.file-icon-box {
+    font-size: 1.6rem;
+    color: var(--kirigami-primary);
+}
+
+.file-meta {
+    flex: 1;
+    overflow: hidden;
+}
+
+.file-title {
+    font-size: var(--font-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+}
+
+.file-status-badge {
+    background: rgba(46, 204, 113, 0.18);
+    color: var(--kirigami-success);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+    font-size: var(--font-xs);
+    font-weight: 600;
+}
+
+/* Метаданные бабла бота */
+.bubble-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--glass-border-subtle);
+    font-size: var(--font-xs);
+}
+
+.source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--kirigami-success);
+    background: rgba(46, 204, 113, 0.12);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.bubble-time {
+    color: var(--text-muted);
+}
+
+/* Индикатор набора */
+.typing-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    max-width: 920px;
+    width: 100%;
+    margin: 4px auto 14px;
+}
+
+.typing-glass {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: var(--glass-card);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px 16px 16px 4px;
+}
+
+.typing-dot {
+    width: 7px;
+    height: 7px;
+    background-color: var(--kirigami-primary);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* Нижняя панель чата */
+.chat-footer-bar {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid var(--glass-border);
+    padding: clamp(10px, 1.4vw, 16px) clamp(16px, 2.5vw, 32px);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.suggestions-scroll {
+    width: 100%;
+    max-width: 920px;
+    margin: 0 auto;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.suggestions-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+.suggestions-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.suggestions-deck {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.suggestion-pill {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+    font-size: var(--font-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-pill:hover {
+    background: rgba(61, 174, 233, 0.2);
+    border-color: var(--kirigami-primary);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+}
+
+/* Инпут строка */
+.input-assembly {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 920px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.tool-button {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.tool-button:hover {
+    background: rgba(61, 174, 233, 0.15);
+    color: var(--kirigami-primary);
+    border-color: var(--kirigami-primary);
+    transform: translateY(-1px);
+}
+
+.chat-input-envelope {
+    flex: 1;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.chat-input-envelope:focus-within {
+    border-color: var(--kirigami-primary);
+    background: rgba(15, 23, 42, 0.95);
+    box-shadow: 0 0 0 3px rgba(61, 174, 233, 0.25);
+}
+
+.chat-text-entry {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--font-base);
+    color: var(--text-primary);
+    resize: none;
+    max-height: 120px;
+    line-height: 1.45;
+}
+
+.send-action-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    border: none;
+    color: var(--text-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(42, 117, 211, 0.4);
+    transition: all 0.2s ease;
+}
+
+.send-action-btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.footer-micro-note {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ==========================================================================
+   Нижний Navigation Bar (скрыт на десктопе, активен на мобайле)
+   ========================================================================== */
+.kirigami-bottom-nav {
+    display: none;
+}
+
+/* ==========================================================================
+   АДАПТИВНОСТЬ: МОБИЛЬНЫЙ РЕЖИМ (KDE Kirigami Mobile Layout: max-width: 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Переводим экран чата в 1 колонку */
+    .screen-chat {
+        grid-template-columns: 1fr;
+        padding-bottom: 56px; /* отступ под нижний Navigation Bar */
+    }
+
+    /* Прячем десктопный Sidebar */
+    .kirigami-sidebar {
+        display: none !important;
+    }
+
+    /* Мобильный Navigation Bar внизу экрана */
+    .kirigami-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--glass-border);
+        justify-content: space-around;
+        align-items: center;
+        z-index: 50;
+        padding: 0 6px;
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        transition: all 0.15s ease;
+    }
+
+    .bottom-nav-item i {
+        font-size: 1.15rem;
+    }
+
+    .bottom-nav-item.active, .bottom-nav-item:hover {
+        color: var(--kirigami-primary);
+    }
+
+    /* Баблы чата на мобайле занимают 100% ширины по ТЗ! */
+    .bubble-user-glass {
+        max-width: 100% !important;
+        border-radius: var(--radius-sm);
+    }
+
+    .bubble-bot-glass {
+        max-width: 100% !important;
+        border-radius: var(--radius-sm);
+    }
+
+    .msg-bot-avatar {
+        display: none; /* Экономим горизонтальное пространство на узких экранах */
+    }
+
+    .chat-messages-area {
+        padding: 10px 8px;
+    }
+
+    .chat-footer-bar {
+        padding: 8px 10px;
+    }
+
+    .header-title-row .header-title {
+        font-size: 1rem;
+    }
+
+    .header-subtitle {
+        display: none;
+    }
+
+    .theme-selector-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+@keyframes kirigamiFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

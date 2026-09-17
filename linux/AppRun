@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# AppRun — Скрипт инициализации и запуска приложения внутри AppImage
+# Настраивает изолированное окружение библиотек, путей Python и запускает main.py
+# ==============================================================================
+
+set -e
+
+# Определение базовой директории AppImage
+if [ -z "$APPDIR" ]; then
+    APPDIR="$(dirname "$(readlink -f "$0")")"
+fi
+
+export APPDIR
+export APPIMAGE_SILENT_LOCATION=1
+
+# Добавляем бинарники и библиотеки AppDir в пути поиска
+export PATH="$APPDIR/opt/venv/bin:$APPDIR/usr/bin:$APPDIR/bin:$PATH"
+export LD_LIBRARY_PATH="$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu:$APPDIR/lib:$LD_LIBRARY_PATH"
+export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+
+# Настройка путей Python
+# Поддерживаем бандлированный venv внутри AppDir, а также системный fallback
+export PYTHONPATH="$APPDIR:$APPDIR/backend:$PYTHONPATH"
+
+# Добавляем все найденные site-packages в PYTHONPATH
+for py_site in "$APPDIR"/opt/venv/lib/python*/site-packages "$APPDIR"/usr/lib/python*/site-packages; do
+    if [ -d "$py_site" ]; then
+        export PYTHONPATH="$py_site:$PYTHONPATH"
+    fi
+done
+
+# Отключение конфликтов веб-песочницы webkit внутри некоторых FUSE-окружений при необходимости
+if [ -z "$WEBKIT_FORCE_SANDBOX" ]; then
+    export WEBKIT_FORCE_SANDBOX=0
+fi
+
+# Выбор исполняемого файла Python: приоритет у бандлированного venv внутри AppDir
+if [ -x "$APPDIR/opt/venv/bin/python3" ]; then
+    PYTHON_EXEC="$APPDIR/opt/venv/bin/python3"
+elif [ -x "$APPDIR/usr/bin/python3" ]; then
+    PYTHON_EXEC="$APPDIR/usr/bin/python3"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_EXEC="$(command -v python3)"
+else
+    echo "ОШИБКА: Интерпретатор Python 3 не найден ни в AppImage, ни в хост-системе!" >&2
+    exit 1
+fi
+
+# Запуск точки входа
+cd "$APPDIR"
+exec "$PYTHON_EXEC" "$APPDIR/main.py" "$@"
