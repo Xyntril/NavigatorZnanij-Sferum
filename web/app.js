@@ -1,54 +1,162 @@
 /**
- * Навигатор Знаний — JavaScript клиентская логика (web/app.js)
+ * Навигатор Знаний — Клиентская логика приложения MAX UI (web/app.js)
+ * Разработано в рамках хакатона «Идея фикс» платформы Сферум (ООО «МАХ», ООО «Компания ВК»).
+ * 
  * Архитектура:
- * - 100% автономность (Zero CDN, чистые инлайновые SVG для оффлайн-работы в AppImage)
- * - Мультитемность (6 стилей HIG: Dark, Light, Win98, Aero, Breeze Dark, Libadwaita)
- * - Сайдбар с полноценной историей сессий/запросов и кнопкой "Новый диалог"
- * - Поддержка строгой цензуры и ФГОС-валидации имени
- * - Интерактивное прикрепление документов и изображений через нативный Python API
- * - Пасхалки: "Сделай бочку" (CSS 360°), Tux ASCII, GNU/Linux
+ * 1. Интеграция с официальной библиотекой MAX Bridge (https://st.max.ru/js/max-web-app.js):
+ *    - Глобальный объект window.WebApp (ready, expand);
+ *    - Авторизация через window.WebApp.initDataUnsafe.user (id, first_name, last_name, photo_url);
+ *    - Поддержка нативной системной кнопки «Назад» (window.WebApp.BackButton);
+ *    - Тактильные виброотклики HapticFeedback (impactOccurred('light')) при отправке и смене экранов.
+ * 2. Дизайн-система MAX UI (@maxhub/max-ui):
+ *    - 2 изолированные схемы оформления: MAX UI Dark (по умолчанию) и MAX UI Light;
+ *    - Поддержка фирменных squircle-аватаров Avatar.Container и карточек Panel/Container.
+ * 3. Мультимодельный роутер:
+ *    - Переключение между Sber GigaChat, DeepSeek API, YandexGPT и локальным ядром ФГОС.
+ * 4. Полное и безвозвратное удаление истории диалогов и пользовательских сессий (клиент + бэкенд).
  */
 
 document.addEventListener("DOMContentLoaded", () => {
     // =========================================================================
-    // 1. ИНЛАЙНОВЫЕ SVG-ИКОНКИ (100% ОФФЛАЙН, БЕЗ CDN)
+    // 1. ИНЛАЙНОВЫЕ SVG-ИКОНКИ (100% ОФФЛАЙН, БЕЗ СТОРОННИХ ШРИФТОВ)
     // =========================================================================
     const ICONS = {
         brain: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-5.04z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-5.04z"/></svg>`,
-        fileDoc: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
-        filePhoto: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+        fileDoc: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+        filePhoto: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
         check: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
-        steps: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
         tag: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
         chatItem: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-        user: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+        trash: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`
     };
 
     // =========================================================================
-    // 2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+    // 2. АДАПТЕР MAX BRIDGE (max-web-app.js integration)
     // =========================================================================
-    const VALID_THEMES = ["dark", "light", "win98", "aero", "breeze", "adwaita"];
+    const MaxBridge = {
+        isAvailable() {
+            return typeof window.WebApp !== "undefined";
+        },
+        init() {
+            if (this.isAvailable()) {
+                try {
+                    window.WebApp.ready?.();
+                    window.WebApp.expand?.();
+                    console.log("[MAX Bridge] Интеграция с платформой MAX инициализирована успешно.");
+                } catch (err) {
+                    console.warn("[MAX Bridge] Ошибка вызова ready/expand:", err);
+                }
+
+                // Подключение нативной кнопки «Назад»
+                if (window.WebApp.BackButton) {
+                    try {
+                        window.WebApp.BackButton.onClick(() => {
+                            this.handleBackNavigation();
+                        });
+                    } catch (err) {
+                        console.warn("[MAX Bridge] Ошибка привязки BackButton:", err);
+                    }
+                }
+            }
+        },
+        getUser() {
+            if (this.isAvailable() && window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
+                const u = window.WebApp.initDataUnsafe.user;
+                const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ");
+                return {
+                    id: u.id,
+                    first_name: u.first_name || "",
+                    last_name: u.last_name || "",
+                    photo_url: u.photo_url || null,
+                    username: u.username || "",
+                    displayName: fullName || u.first_name || u.username || `Пользователь #${u.id}`
+                };
+            }
+            return null;
+        },
+        triggerHaptic(type = "light") {
+            if (this.isAvailable() && window.WebApp.HapticFeedback && typeof window.WebApp.HapticFeedback.impactOccurred === "function") {
+                try {
+                    window.WebApp.HapticFeedback.impactOccurred(type);
+                } catch (err) {
+                    console.debug("[MAX Bridge] HapticFeedback impactOccurred error:", err);
+                }
+            }
+        },
+        setBackButtonVisible(visible) {
+            if (this.isAvailable() && window.WebApp.BackButton) {
+                try {
+                    if (visible) {
+                        window.WebApp.BackButton.show();
+                    } else {
+                        window.WebApp.BackButton.hide();
+                    }
+                } catch (err) {
+                    console.debug("[MAX Bridge] BackButton visibility error:", err);
+                }
+            }
+        },
+        handleBackNavigation() {
+            // Закрытие модальных окон при нажатии нативной кнопки "Назад"
+            if (settingsModal && settingsModal.style.display === "flex") {
+                closeSettingsModal();
+                return;
+            }
+            if (attachModal && attachModal.style.display === "flex") {
+                closeAttachModal();
+                return;
+            }
+            if (aboutModal && aboutModal.style.display === "flex") {
+                aboutModal.style.display = "none";
+                this.updateBackState();
+                return;
+            }
+            // Закрытие мобильного сайдбара
+            if (appSidebar && appSidebar.classList.contains("mobile-open")) {
+                appSidebar.classList.remove("mobile-open");
+                this.updateBackState();
+                return;
+            }
+        },
+        updateBackState() {
+            const hasOpenModal = (
+                (settingsModal && settingsModal.style.display === "flex") ||
+                (attachModal && attachModal.style.display === "flex") ||
+                (aboutModal && aboutModal.style.display === "flex") ||
+                (appSidebar && appSidebar.classList.contains("mobile-open"))
+            );
+            this.setBackButtonVisible(hasOpenModal);
+        }
+    };
+
+    // Стартовая инициализация моста MAX WebApp
+    MaxBridge.init();
+
+    // =========================================================================
+    // 3. СОСТОЯНИЕ ПРИЛОЖЕНИЯ И ТЕМЫ MAX UI
+    // =========================================================================
+    const VALID_THEMES = ["dark", "light"];
     let currentTheme = localStorage.getItem("nz_theme") || "dark";
     if (!VALID_THEMES.includes(currentTheme)) currentTheme = "dark";
 
     let currentUsername = localStorage.getItem("nz_user") || "Пользователь";
+    let currentUserPhoto = localStorage.getItem("nz_user_photo") || null;
+    let currentLLMModel = localStorage.getItem("nz_llm_model") || "gigachat";
     let isWaitingForResponse = false;
     let sessions = [];
     let currentSessionId = null;
 
-    // Загрузка сохраненных сессий из LocalStorage
+    // Загрузка сохранённых диалогов
     try {
-        const savedSessions = localStorage.getItem("nz_sessions");
-        if (savedSessions) {
-            sessions = JSON.parse(savedSessions);
-        }
+        const saved = localStorage.getItem("nz_sessions");
+        if (saved) sessions = JSON.parse(saved);
     } catch (e) {
-        console.warn("Не удалось прочитать сохраненные сессии:", e);
+        console.warn("Ошибка чтения сохранённых сессий:", e);
         sessions = [];
     }
 
     // =========================================================================
-    // 3. ССЫЛКИ НА DOM-ЭЛЕМЕНТЫ
+    // 4. ССЫЛКИ НА DOM-ЭЛЕМЕНТЫ MAX UI
     // =========================================================================
     const appContainer = document.getElementById("app-container");
 
@@ -57,24 +165,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const onboardingForm = document.getElementById("onboarding-form");
     const usernameInput = document.getElementById("username-input");
     const onboardingWarning = document.getElementById("onboarding-warning");
-    const onboardingWinTitlebar = document.getElementById("onboarding-win-titlebar");
-    const themeChoiceBtns = document.querySelectorAll(".theme-choice-btn");
 
-    // Экран 2: Чат и Сайдбар
+    // Экран 2: Рабочая область (Chat + Panel)
     const chatScreen = document.getElementById("chat-screen");
-    const chatWinTitlebar = document.getElementById("chat-win-titlebar");
     const appSidebar = document.getElementById("app-sidebar");
     const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
-    const win98Statusbar = document.getElementById("win-statusbar");
     const currentUserLabel = document.getElementById("current-user-label");
+    const headerUserAvatar = document.getElementById("header-user-avatar");
     const newChatBtn = document.getElementById("new-chat-btn");
     const sessionHistoryList = document.getElementById("session-history-list");
-    const themeDropdown = document.getElementById("theme-dropdown");
-    const clearChatBtn = document.getElementById("clear-chat-btn");
     const aboutBtn = document.getElementById("about-btn");
     const headerTuxBtn = document.getElementById("header-tux-btn");
 
-    // Область сообщений и поле ввода
+    // Область переписки и ввод
     const chatMessagesArea = document.getElementById("chat-messages-area");
     const messagesContainer = document.getElementById("messages-container");
     const typingIndicator = document.getElementById("typing-indicator");
@@ -83,7 +186,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const sendBtn = document.getElementById("send-btn");
     const attachBtn = document.getElementById("attach-btn");
 
-    // Модальные окна
+    // Модальное окно «Настройки»
+    const settingsBtn = document.getElementById("settings-btn");
+    const headerSettingsBtn = document.getElementById("header-settings-btn");
+    const settingsModal = document.getElementById("settings-modal");
+    const closeSettingsModalBtn = document.getElementById("close-settings-modal-btn");
+    const closeSettingsBtnOk = document.getElementById("close-settings-btn-ok");
+    const settingsThemeSelect = document.getElementById("settings-theme-select");
+    const settingsLlmSelect = document.getElementById("settings-llm-select");
+    const settingsClearAllSessionsBtn = document.getElementById("settings-clear-all-sessions-btn");
+
+    // Модальные окна «Прикрепить файл» и «О проекте»
     const attachModal = document.getElementById("attach-modal");
     const closeAttachModalBtn = document.getElementById("close-attach-modal-btn");
     const modalAttachDocBtn = document.getElementById("modal-attach-doc-btn");
@@ -94,63 +207,126 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalOkBtn = document.getElementById("modal-ok-btn");
 
     // =========================================================================
-    // 4. УПРАВЛЕНИЕ 6 ТЕМАМИ ОФОРМЛЕНИЯ ПО РУКОВОДСТВАМ HIG
+    // 5. УПРАВЛЕНИЕ ТЕМАМИ И ПРОФИЛЕМ ПОЛЬЗОВАТЕЛЯ MAX
     // =========================================================================
     function applyTheme(themeName) {
         if (!VALID_THEMES.includes(themeName)) themeName = "dark";
         currentTheme = themeName;
         localStorage.setItem("nz_theme", currentTheme);
 
-        // Переключение класса на body
         document.body.className = "theme-" + themeName;
 
-        // Синхронизация селектора темы в сайдбаре
-        if (themeDropdown) {
-            themeDropdown.value = themeName;
+        if (settingsThemeSelect) {
+            settingsThemeSelect.value = themeName;
+        }
+    }
+
+    function setLLMModel(modelName) {
+        currentLLMModel = modelName || "gigachat";
+        localStorage.setItem("nz_llm_model", currentLLMModel);
+
+        if (settingsLlmSelect) {
+            settingsLlmSelect.value = currentLLMModel;
         }
 
-        // Синхронизация карточек на онбординге
-        themeChoiceBtns.forEach(btn => {
-            if (btn.dataset.theme === themeName) {
-                btn.classList.add("selected");
-            } else {
-                btn.classList.remove("selected");
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.set_llm_model === "function") {
+            window.pywebview.api.set_llm_model(currentLLMModel).catch(console.warn);
+        }
+    }
+
+    function renderSquircleAvatar(element, name, photoUrl) {
+        if (!element) return;
+        if (photoUrl) {
+            element.innerHTML = `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" class="max-avatar-img">`;
+        } else {
+            element.textContent = (name && name[0] ? name[0] : "П").toUpperCase();
+        }
+    }
+
+    function updateProfileDisplay(name, maxUser = null) {
+        currentUsername = name || "Пользователь";
+        localStorage.setItem("nz_user", currentUsername);
+
+        if (maxUser && maxUser.photo_url) {
+            currentUserPhoto = maxUser.photo_url;
+            localStorage.setItem("nz_user_photo", currentUserPhoto);
+        }
+
+        if (currentUserLabel) currentUserLabel.textContent = currentUsername;
+
+        // Обновляем мини-аватар в шапке
+        renderSquircleAvatar(headerUserAvatar, currentUsername, currentUserPhoto);
+
+        // Обновляем блок профиля в настройках
+        const profileNameEl = document.getElementById("profile-display-name");
+        const profileStatusEl = document.getElementById("profile-bridge-status");
+        const profileAvatarEl = document.getElementById("profile-avatar-circle");
+
+        if (profileNameEl) profileNameEl.textContent = currentUsername;
+        renderSquircleAvatar(profileAvatarEl, currentUsername, currentUserPhoto);
+
+        if (maxUser) {
+            if (profileStatusEl) {
+                profileStatusEl.textContent = `MAX Bridge: ID #${maxUser.id} (${maxUser.first_name} ${maxUser.last_name})`.trim();
             }
-        });
-
-        // Заголовки окон для Win98 и Aero
-        const isWindowed = (themeName === "win98" || themeName === "aero");
-        if (chatWinTitlebar) chatWinTitlebar.style.display = isWindowed ? "flex" : "none";
-        if (onboardingWinTitlebar) onboardingWinTitlebar.style.display = isWindowed ? "flex" : "none";
-        if (win98Statusbar) win98Statusbar.style.display = (themeName === "win98") ? "flex" : "none";
+        } else {
+            if (profileStatusEl) {
+                profileStatusEl.textContent = "Режим: Локальный десктопный клиент";
+            }
+        }
     }
 
-    // Обработчики кликов по кнопкам тем на онбординге
-    themeChoiceBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const chosen = btn.dataset.theme;
-            applyTheme(chosen);
-        });
-    });
+    // Слушатели модального окна настроек
+    function openSettingsModal() {
+        MaxBridge.triggerHaptic("light");
+        if (settingsThemeSelect) settingsThemeSelect.value = currentTheme;
+        if (settingsLlmSelect) settingsLlmSelect.value = currentLLMModel;
+        settingsModal.style.display = "flex";
+        MaxBridge.updateBackState();
+    }
 
-    // Обработчик смены темы в сайдбаре
-    if (themeDropdown) {
-        themeDropdown.addEventListener("change", (e) => {
+    function closeSettingsModal() {
+        settingsModal.style.display = "none";
+        MaxBridge.updateBackState();
+    }
+
+    if (settingsBtn) settingsBtn.addEventListener("click", openSettingsModal);
+    if (headerSettingsBtn) headerSettingsBtn.addEventListener("click", openSettingsModal);
+    if (closeSettingsModalBtn) closeSettingsModalBtn.addEventListener("click", closeSettingsModal);
+    if (closeSettingsBtnOk) closeSettingsBtnOk.addEventListener("click", closeSettingsModal);
+
+    if (settingsModal) {
+        settingsModal.addEventListener("click", (e) => {
+            if (e.target === settingsModal) closeSettingsModal();
+        });
+    }
+
+    if (settingsThemeSelect) {
+        settingsThemeSelect.addEventListener("change", (e) => {
             applyTheme(e.target.value);
+            MaxBridge.triggerHaptic("light");
         });
     }
 
-    // Инициализируем стартовую тему
+    if (settingsLlmSelect) {
+        settingsLlmSelect.addEventListener("change", (e) => {
+            setLLMModel(e.target.value);
+            MaxBridge.triggerHaptic("light");
+        });
+    }
+
+    // Инициализация стартовой темы и модели LLM
     applyTheme(currentTheme);
+    setLLMModel(currentLLMModel);
 
     // =========================================================================
-    // 5. МОДЕЛЬ СЕССИЙ И ИСТОРИИ ЗАПРОСОВ В САЙДБАРЕ
+    // 6. УПРАВЛЕНИЕ СЕССИЯМИ И БЕЗВОЗВРАТНОЕ УДАЛЕНИЕ ДАННЫХ
     // =========================================================================
     function saveSessionsToStorage() {
         try {
             localStorage.setItem("nz_sessions", JSON.stringify(sessions));
         } catch (e) {
-            console.warn("Ошибка сохранения сессий:", e);
+            console.warn("Ошибка сохранения сессий в хранилище:", e);
         }
     }
 
@@ -160,11 +336,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (sessions.length === 0) {
             const emptyItem = document.createElement("div");
-            emptyItem.style.padding = "8px 12px";
-            emptyItem.style.fontSize = "0.78rem";
-            emptyItem.style.opacity = "0.6";
-            emptyItem.style.fontStyle = "italic";
-            emptyItem.textContent = "История сессий пуста";
+            emptyItem.style.padding = "12px 14px";
+            emptyItem.style.fontSize = "0.82rem";
+            emptyItem.style.color = "var(--max-color-text-tertiary)";
+            emptyItem.textContent = "История диалогов пуста";
             sessionHistoryList.appendChild(emptyItem);
             return;
         }
@@ -172,109 +347,178 @@ document.addEventListener("DOMContentLoaded", () => {
         sessions.forEach(sess => {
             const item = document.createElement("div");
             item.className = "history-item" + (sess.id === currentSessionId ? " active" : "");
-            item.title = sess.title;
 
-            const iconSpan = document.createElement("span");
-            iconSpan.className = "history-item-icon";
-            iconSpan.innerHTML = ICONS.chatItem;
+            item.innerHTML = `
+                <span class="history-item-icon">${ICONS.chatItem}</span>
+                <span class="history-item-text" title="${escapeHtml(sess.title)}">${escapeHtml(sess.title)}</span>
+                <button type="button" class="history-item-delete" title="Удалить диалог безвозвратно" data-session-id="${sess.id}">
+                    ${ICONS.trash}
+                </button>
+            `;
 
-            const textSpan = document.createElement("span");
-            textSpan.className = "history-item-text";
-            textSpan.textContent = sess.title || "Новый диалог";
-
-            item.appendChild(iconSpan);
-            item.appendChild(textSpan);
-
-            item.addEventListener("click", () => {
-                loadSession(sess.id);
-                // Закрываем сайдбар на мобильных
+            // Переключение диалога
+            item.addEventListener("click", (e) => {
+                if (e.target.closest(".history-item-delete")) return;
+                MaxBridge.triggerHaptic("light");
+                switchSession(sess.id);
                 if (appSidebar) appSidebar.classList.remove("mobile-open");
+                MaxBridge.updateBackState();
             });
+
+            // Безвозвратное удаление отдельного диалога
+            const deleteBtn = item.querySelector(".history-item-delete");
+            if (deleteBtn) {
+                deleteBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    deleteSession(sess.id);
+                });
+            }
 
             sessionHistoryList.appendChild(item);
         });
     }
 
     function createNewSession(initialTitle = "Новый диалог") {
-        const newId = "sess_" + Date.now();
+        const id = "sess_" + Date.now();
         const newSession = {
-            id: newId,
+            id,
             title: initialTitle,
-            createdAt: Date.now(),
+            createdAt: new Date().toISOString(),
             messages: []
         };
         sessions.unshift(newSession);
-        currentSessionId = newId;
+        currentSessionId = id;
         saveSessionsToStorage();
         renderSessionHistory();
         return newSession;
     }
 
-    function loadSession(sessionId) {
-        const sess = sessions.find(s => s.id === sessionId);
-        if (!sess) return;
-
+    function switchSession(sessionId) {
         currentSessionId = sessionId;
+        renderSessionHistory();
         messagesContainer.innerHTML = "";
 
-        // Воспроизводим сообщения из истории сессии
-        sess.messages.forEach(msg => {
-            if (msg.role === "user") {
-                renderUserBubble(msg.text, false);
-            } else if (msg.role === "file") {
-                renderFileBubble(msg.fileInfo, false);
-            } else if (msg.role === "bot") {
-                renderBotBubble(msg.data, false);
-            }
-        });
-
-        renderSessionHistory();
-        scrollToBottom();
+        const sess = sessions.find(s => s.id === sessionId);
+        if (sess && sess.messages.length > 0) {
+            sess.messages.forEach(msg => {
+                if (msg.role === "user") {
+                    renderUserBubble(msg.text, false);
+                } else if (msg.role === "bot") {
+                    renderBotBubble(msg.data, false);
+                } else if (msg.role === "file") {
+                    renderFileBubble(msg.data, false);
+                }
+            });
+            scrollToBottom();
+        } else {
+            initSessionGreeting();
+        }
     }
 
     function addMessageToCurrentSession(msgObj) {
         let sess = sessions.find(s => s.id === currentSessionId);
         if (!sess) {
-            sess = createNewSession(msgObj.text ? msgObj.text.slice(0, 30) : "Диалог");
+            sess = createNewSession();
         }
-
-        // Если это первый вопрос пользователя, обновляем заголовок сессии
-        if (msgObj.role === "user" && (sess.title === "Новый диалог" || sess.messages.length === 0)) {
-            sess.title = msgObj.text.length > 28 ? msgObj.text.slice(0, 28) + "..." : msgObj.text;
-        }
-
         sess.messages.push(msgObj);
+
+        if (msgObj.role === "user" && sess.messages.filter(m => m.role === "user").length === 1) {
+            const snippet = msgObj.text.slice(0, 26).trim() + (msgObj.text.length > 26 ? "..." : "");
+            sess.title = snippet;
+            renderSessionHistory();
+        }
         saveSessionsToStorage();
+    }
+
+    function deleteSession(sessionId) {
+        MaxBridge.triggerHaptic("light");
+        if (!confirm("Удалить этот диалог безвозвратно? Все сообщения будут полностью стёрты из базы данных.")) {
+            return;
+        }
+
+        // Вызов Python API для стирания на бэкенде
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.delete_session === "function") {
+            window.pywebview.api.delete_session(sessionId).catch(console.warn);
+        }
+
+        sessions = sessions.filter(s => s.id !== sessionId);
+        saveSessionsToStorage();
+
+        if (currentSessionId === sessionId) {
+            if (sessions.length > 0) {
+                switchSession(sessions[0].id);
+            } else {
+                currentSessionId = null;
+                messagesContainer.innerHTML = "";
+                initSessionGreeting();
+            }
+        }
         renderSessionHistory();
     }
 
+    function clearAllSessions() {
+        MaxBridge.triggerHaptic("light");
+        if (!confirm("Вы действительно хотите полностью и безвозвратно удалить ВСЕ чаты и сессии из базы данных?")) {
+            return;
+        }
+
+        // Вызов Python API для полной очистки базы данных
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.clear_all_sessions === "function") {
+            window.pywebview.api.clear_all_sessions().catch(console.warn);
+        }
+
+        sessions = [];
+        currentSessionId = null;
+        saveSessionsToStorage();
+        renderSessionHistory();
+        messagesContainer.innerHTML = "";
+        initSessionGreeting();
+        closeSettingsModal();
+    }
+
+    if (settingsClearAllSessionsBtn) {
+        settingsClearAllSessionsBtn.addEventListener("click", clearAllSessions);
+    }
+
     // =========================================================================
-    // 6. РЕНДЕРИНГ И ФОРМАТИРОВАНИЕ СООБЩЕНИЙ
+    // 7. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И РЕНДЕРИНГ СООБЩЕНИЙ MAX UI
     // =========================================================================
-    function getCurrentTimeString() {
-        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function formatMarkdown(text) {
         if (!text) return "";
+        let out = escapeHtml(text);
 
-        // Блоки кода ```text ... ``` (включая ASCII-арт Тукса)
-        let formatted = text.replace(/```text([\s\S]*?)```/g, (match, p1) => {
-            return `<pre class="tux-ascii">${p1.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
+        // Блоки кода ```text ... ```
+        out = out.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+            return `<pre class="code-block"><code>${code}</code></pre>`;
         });
 
-        // Математические формулы $...$
-        formatted = formatted.replace(/\$([^\$]+)\$/g, '<code class="math-inline">$1</code>');
-        // Жирный шрифт **...**
-        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        // Курсив *...*
-        formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-        // Цитаты
-        formatted = formatted.replace(/^>\s*(.+)$/gm, '<blockquote style="border-left: 3px solid currentColor; opacity: 0.85; padding-left: 10px; margin: 6px 0;">$1</blockquote>');
-        // Переносы строк
-        formatted = formatted.replace(/\n/g, '<br>');
+        // Инлайновый код `code`
+        out = out.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
-        return formatted;
+        // Жирный шрифт **текст**
+        out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+        // Курсив *текст*
+        out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+        // Переносы строк
+        out = out.replace(/\n/g, "<br>");
+        return out;
+    }
+
+    function getCurrentTimeString() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
 
     function scrollToBottom() {
@@ -285,13 +529,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderUserBubble(text, save = true) {
         const row = document.createElement("div");
-        row.className = "msg-row user";
+        row.className = "message-row user";
 
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble user";
 
         const content = document.createElement("div");
-        content.textContent = text;
+        content.className = "bubble-content";
+        content.innerHTML = formatMarkdown(text);
 
         const time = document.createElement("div");
         time.className = "bubble-time";
@@ -308,119 +553,140 @@ document.addEventListener("DOMContentLoaded", () => {
         scrollToBottom();
     }
 
-    function renderFileBubble(fileInfo, save = true) {
+    function renderFileBubble(fileData, save = true) {
         const row = document.createElement("div");
-        row.className = "msg-row user";
+        row.className = "message-row user";
 
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble user";
 
-        const card = document.createElement("div");
-        card.className = "file-attachment-card";
+        const isPhoto = fileData.type === "photo";
+        const iconSvg = isPhoto ? ICONS.filePhoto : ICONS.fileDoc;
+        const typeLabel = isPhoto ? "Снимок задания / Схема" : "Учебный документ";
 
-        const iconBox = document.createElement("div");
-        iconBox.className = "file-icon-box";
-        iconBox.innerHTML = fileInfo.type === "photo" ? ICONS.filePhoto : ICONS.fileDoc;
-
-        const meta = document.createElement("div");
-        meta.className = "file-meta";
-        meta.innerHTML = `
-            <div class="file-title">Файл: ${fileInfo.filename}</div>
-            <div class="file-size">${fileInfo.filesize || 'Локальная память'}</div>
+        bubble.innerHTML = `
+            <div class="file-attachment-card">
+                <div class="file-icon-box">${iconSvg}</div>
+                <div class="file-info-box">
+                    <div class="file-name">${escapeHtml(fileData.filename)}</div>
+                    <div class="file-meta">${typeLabel} • ${fileData.filesize || "Размер не указан"}</div>
+                </div>
+            </div>
+            <div class="bubble-time">${getCurrentTimeString()}</div>
         `;
 
-        card.appendChild(iconBox);
-        card.appendChild(meta);
-
-        const time = document.createElement("div");
-        time.className = "bubble-time";
-        time.textContent = getCurrentTimeString();
-
-        bubble.appendChild(card);
-        bubble.appendChild(time);
         row.appendChild(bubble);
         messagesContainer.appendChild(row);
 
         if (save) {
-            addMessageToCurrentSession({ role: "file", fileInfo, time: getCurrentTimeString() });
+            addMessageToCurrentSession({ role: "file", data: fileData, time: getCurrentTimeString() });
         }
         scrollToBottom();
     }
 
     function renderBotBubble(data, save = true) {
         const row = document.createElement("div");
-        row.className = "msg-row bot";
+        row.className = "message-row bot";
 
+        // Фирменный Squircle-аватар Сократа / Сферума
         const avatar = document.createElement("div");
-        avatar.className = "bot-avatar-box";
+        avatar.className = "max-avatar max-avatar-squircle bot-avatar-box";
         avatar.innerHTML = ICONS.brain;
         row.appendChild(avatar);
 
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble bot";
 
-        // Основной текст сообщения
+        // Заголовок карточки
+        if (data.title) {
+            const titleEl = document.createElement("div");
+            titleEl.className = "bubble-title";
+            titleEl.textContent = data.title;
+            bubble.appendChild(titleEl);
+        }
+
+        // Основной текст ответа
         if (data.message) {
-            const bodyDiv = document.createElement("div");
-            bodyDiv.className = "bot-body-text";
-            bodyDiv.innerHTML = formatMarkdown(data.message);
-            bubble.appendChild(bodyDiv);
+            const content = document.createElement("div");
+            content.className = "bubble-content";
+            content.innerHTML = formatMarkdown(data.message);
+            bubble.appendChild(content);
         }
 
-        // Шаги Сократа
-        if (data.steps && data.steps.length > 0) {
-            const stepsCard = document.createElement("div");
-            stepsCard.className = "socratic-steps-card";
+        // Шаги разбора Сократа
+        if (data.steps && Array.isArray(data.steps) && data.steps.length > 0) {
+            const stepsBlock = document.createElement("div");
+            stepsBlock.className = "socratic-steps-block";
 
-            const label = document.createElement("div");
-            label.className = "socratic-steps-label";
-            label.innerHTML = `${ICONS.steps} <span>Шаги понимания:</span>`;
-            stepsCard.appendChild(label);
-
-            data.steps.forEach(s => {
-                const sRow = document.createElement("div");
-                sRow.className = "socratic-step-item";
-                sRow.innerHTML = `
-                    <span class="step-circle">${s.step}</span>
-                    <div><strong>${s.title}:</strong> ${s.description}</div>
+            data.steps.forEach(st => {
+                const stepItem = document.createElement("div");
+                stepItem.className = "socratic-step-item";
+                stepItem.innerHTML = `
+                    <div class="step-num">${st.step}</div>
+                    <div class="step-body">
+                        <div class="step-title">${escapeHtml(st.title)}</div>
+                        <div class="step-desc">${formatMarkdown(st.description)}</div>
+                    </div>
                 `;
-                stepsCard.appendChild(sRow);
+                stepsBlock.appendChild(stepItem);
             });
-            bubble.appendChild(stepsCard);
+            bubble.appendChild(stepsBlock);
         }
 
-        // Карточка физической аналогии
+        // Модель и аналогия
         if (data.analogy && data.analogy.narrative) {
-            const analogyBox = document.createElement("div");
-            analogyBox.className = "socratic-card analogy-card";
-            analogyBox.innerHTML = `
-                <div style="font-weight: 700; margin-bottom: 4px;">🌊 ${data.analogy.title || "Физическая модель"}:</div>
-                <div style="opacity: 0.9;">${formatMarkdown(data.analogy.narrative)}</div>
+            const analogyCard = document.createElement("div");
+            analogyCard.className = "socratic-card";
+            analogyCard.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 6px;">
+                    ${ICONS.brain}
+                    <span>${escapeHtml(data.analogy.title || "Модель и аналогия")}</span>
+                </div>
+                <div style="font-size: 0.88rem; color: var(--max-color-text-secondary);">${formatMarkdown(data.analogy.narrative)}</div>
             `;
-            bubble.appendChild(analogyBox);
+            bubble.appendChild(analogyCard);
         }
 
-        // Вопрос Сократа
+        // Наводящий вопрос Сократа
         if (data.socratic_question) {
-            const qBox = document.createElement("div");
-            qBox.className = "socratic-card socratic-question-card";
-            qBox.innerHTML = `
-                <div style="font-weight: 700; margin-bottom: 4px;">💡 Вопрос Сократа:</div>
-                <div>${formatMarkdown(data.socratic_question)}</div>
+            const socQuestion = document.createElement("div");
+            socQuestion.className = "socratic-question-box";
+            socQuestion.innerHTML = `
+                <div class="soc-q-icon">${ICONS.check}</div>
+                <div class="soc-q-text">${formatMarkdown(data.socratic_question)}</div>
             `;
-            bubble.appendChild(qBox);
+            bubble.appendChild(socQuestion);
         }
 
-        // Мета-строка (источник ФГОС и время)
+        // Интерактивные подсказки для быстрого ответа
+        if (data.suggestions && Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+            const suggRow = document.createElement("div");
+            suggRow.className = "suggestions-track";
+
+            data.suggestions.forEach(sug => {
+                const chip = document.createElement("button");
+                chip.type = "button";
+                chip.className = "suggestion-chip";
+                chip.textContent = sug;
+                chip.addEventListener("click", () => {
+                    MaxBridge.triggerHaptic("light");
+                    sendMessage(sug);
+                });
+                suggRow.appendChild(chip);
+            });
+            bubble.appendChild(suggRow);
+        }
+
+        // Подвал карточки с метаданными и временем
         const metaRow = document.createElement("div");
+        metaRow.className = "bubble-footer-meta";
         metaRow.style.display = "flex";
-        metaRow.style.alignItems = "center";
         metaRow.style.justifyContent = "space-between";
-        metaRow.style.marginTop = "4px";
+        metaRow.style.marginTop = "6px";
 
         const badge = document.createElement("div");
         badge.className = "source-tag";
-        badge.innerHTML = `${ICONS.tag} <span>${data.source || "ФГОС РФ • GNU GPLv3"}</span>`;
+        badge.innerHTML = `${ICONS.tag} <span>${escapeHtml(data.source || "ФГОС РФ • MAX")}</span>`;
 
         const time = document.createElement("div");
         time.className = "bubble-time";
@@ -447,11 +713,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // 7. ПАСХАЛКИ (БОЧКА 360°, TUX ASCII, GNU/LINUX)
+    // 8. ИНТЕРАКТИВНЫЕ ОБРАЗОВАТЕЛЬНЫЕ ПАСХАЛКИ
     // =========================================================================
     function triggerBarrelRoll() {
         appContainer.classList.remove("barrel-roll-active");
-        void appContainer.offsetWidth; // Force Reflow
+        void appContainer.offsetWidth;
         appContainer.classList.add("barrel-roll-active");
 
         setTimeout(() => {
@@ -461,26 +727,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function getTuxResponse() {
         return {
-            title: "Пингвин Тукс",
-            message: `🐧 **Привет из мира свободного программного обеспечения!**\n\nПингвин Тукс напоминает: знание должно быть свободным, как и твой цифровой наставник (GNU GPLv3)!\n\`\`\`text\n     .--.\n    |o_o |\n    |:_/ |\n   //   \\ \\\n  (|     | )\n /'\\_   _/\`\\\n \\___)=(___/\n\`\`\`\nСвободные знания принадлежат каждому человеку!`,
-            source: "Free Software Foundation • GPLv3"
+            title: "Пингвин Тукс — Талисман Linux",
+            message: `🐧 **Привет от пингвина Тукса — талисмана Linux!**\n\nЯ помогаю школьникам разбираться в информатике, физике и математике по стандартам ФГОС РФ для платформы Сферум и мессенджера MAX!\n\`\`\`text\n     .--.\n    |o_o |\n    |:_/ |\n   //   \\ \\\n  (|     | )\n /'\\_   _/\\\\\n \\___)=(___/\n\`\`\`\nИзучай фундаментальные законы и развивай аналитическое мышление методом Сократа!`,
+            source: "ФГОС Информатика • MAX UI"
         };
     }
 
-    function getStallmanResponse() {
+    function getLinuxResponse() {
         return {
-            title: "Интервенция Ричарда М. Столлмана",
-            message: `«Я хотел бы вмешаться на мгновение. То, что вы называете Linux, на самом деле — **GNU/Linux**, или, как я недавно стал называть его, **GNU плюс Linux**...\n\nМы учим понимать базовые принципы и защищаем 4 фундаментальные свободы пользователей!»`,
-            source: "GNU Project • Richard M. Stallman"
+            title: "Операционные системы • Архитектура Linux",
+            message: `🐧 **Операционные системы семейства Linux**\n\nLinux — это высокопроизводительное монолитное ядро операционной системы, лежащее в основе миллионов серверов, облачных платформ и мобильных устройств.\n\nВ рамках школьного курса информатики по стандартам **ФГОС РФ** изучение устройства операционных систем развивает понимание файловой иерархии, процессов, потоков и сетевых протоколов.`,
+            source: "ФГОС РФ • MAX"
         };
     }
 
     // =========================================================================
-    // 8. ОТПРАВКА СООБЩЕНИЙ И ОБРАБОТКА ДИАЛОГА
+    // 9. ОТПРАВКА СООБЩЕНИЙ И МАРШРУТИЗАЦИЯ В LLM API
     // =========================================================================
     async function sendMessage(manualText) {
         const text = (manualText || userInput.value || "").trim();
         if (!text || isWaitingForResponse) return;
+
+        // Тактильный отклик MAX Bridge при отправке
+        MaxBridge.triggerHaptic("light");
 
         renderUserBubble(text, true);
         userInput.value = "";
@@ -488,7 +757,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const lower = text.toLowerCase().trim();
 
-        // Проверка пасхалки "Сделай бочку"
+        // Пасхалка "Сделай бочку"
         if (lower.includes("сделай бочку") || lower.includes("do a barrel roll") || lower === "бочка") {
             triggerBarrelRoll();
         }
@@ -498,39 +767,47 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             let response = null;
 
-            // Локальный перехват оффлайн-пасхалок
             if (lower === "show me tux" || lower === "тукс" || lower === "tux") {
                 response = getTuxResponse();
             } else if (lower === "linux" || lower === "линукс") {
-                response = getStallmanResponse();
+                response = getLinuxResponse();
             } else if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.send_message === "function") {
-                response = await window.pywebview.api.send_message(text, currentUsername);
+                response = await window.pywebview.api.send_message(text, currentUsername, currentLLMModel);
             } else {
-                // Браузерный fallback для локального тестирования
+                // Браузерный fallback
                 await new Promise(r => setTimeout(r, 400));
                 response = {
                     title: "Закон Ома для участка цепи",
                     message: `Отличный вопрос, **${currentUsername}**! Закон Ома гласит: **I = U / R**. Сила тока прямо пропорциональна напряжению и обратно пропорциональна сопротивлению проводника.`,
                     steps: [
-                        { step: 1, title: "Напряжение (U)", description: "Напор или толчок, заставляющий заряды двигаться по цепи." },
-                        { step: 2, title: "Сопротивление (R)", description: "Препятствие кристаллической решётки проводника." },
-                        { step: 3, title: "Сила тока (I)", description: "Количество зарядов в секунду ($I = \\frac{U}{R}$)." }
+                        { step: 1, title: "Формула", description: "В системе СИ: Сила тока $I$ измеряется в Амперах (А), напряжение $U$ в Вольтах (В), сопротивление $R$ в Омах (Ом)." },
+                        { step: 2, title: "Аналогия", description: "Напряжение — это напор воды из крана, а сопротивление — сужение шланга. Чем сильнее сужен шланг, тем меньше струя воды (ток)." },
+                        { step: 3, title: "Вывод Сократа", description: "Что произойдёт с током в лампочке, если напряжение батарейки увеличить в два раза, не меняя лампочку?" }
                     ],
                     analogy: {
-                        title: "Аналогия с водой в трубе",
-                        narrative: "Напряжение ($U$) — давление водяного насоса. Сопротивление ($R$) — зажим на шланге. Сила тока ($I$) — сколько литров вытекает за 1 секунду."
+                        title: "Модель потока воды",
+                        narrative: "Представь реку, в которую установили плотину с узким проходом. Вода течёт медленнее из-за сопротивления. Но если увеличить напор сверху, поток усилится!"
                     },
-                    socratic_question: "Если увеличить сопротивление $R$ в 2 раза при неизменном напряжении, как изменится сила тока?",
-                    source: "ФГОС Физика 8 кл. • §44"
+                    socratic_question: "Если сопротивление $R$ вырастет в 3 раза при постоянном $U$, как изменится сила тока $I$?",
+                    source: "ФГОС Физика 8 класс • Перышкин А.В.",
+                    suggestions: [
+                        "I = U / R",
+                        "помоги решить",
+                        "что такое фотосинтез",
+                        "show me tux"
+                    ]
                 };
             }
 
-            renderBotBubble(response, true);
+            if (response) {
+                renderBotBubble(response, true);
+            }
         } catch (err) {
-            console.error("Ошибка передачи сообщения бэкенду:", err);
+            console.error("Ошибка при обработке запроса:", err);
             renderBotBubble({
-                message: "⚠️ Произошла ошибка связи с ядром системы. Попробуй ещё раз.",
-                source: "Системное уведомление"
+                title: "Системное уведомление",
+                message: "Не удалось получить ответ ассистента. Пожалуйста, повторите запрос.",
+                source: "Системная ошибка"
             }, true);
         } finally {
             setTyping(false);
@@ -539,7 +816,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // 9. ОНБОРДИНГ И ВАЛИДАЦИЯ ИМЕНИ (ФГОС)
+    // 10. ОНБОРДИНГ И ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ MAX BRIDGE
     // =========================================================================
     async function initSessionGreeting() {
         let greetingData = null;
@@ -556,39 +833,61 @@ document.addEventListener("DOMContentLoaded", () => {
             greetingData = {
                 title: "Навигатор Знаний",
                 username: currentUsername,
-                message: `Привет, **${currentUsername}**! Я твой Навигатор Знаний.\n\nМои знания **абсолютно свободны**, и эта программа уважает твои **цифровые права и свободы** (GNU GPLv3).\n\nЧто будем изучать по свободной программе ФГОС?`,
+                message: `Привет, **${currentUsername}**! Я твой Навигатор Знаний в среде MAX.\n\nЯ помогу тебе изучать формулы и законы природы по стандартам ФГОС РФ методом Сократа.\n\nЧто будем изучать сегодня?`,
                 steps: [
-                    { step: 1, title: "Свобода темы", description: "Спроси формулу или явление (например, **I = U / R** или **a² + b² = c²**)." },
+                    { step: 1, title: "Выбор темы", description: "Спроси формулу или явление (например, **I = U / R** или **a² + b² = c²**)." },
                     { step: 2, title: "Физический смысл", description: "Разберём процесс через понятную модель (давление воды в трубе)." },
-                    { step: 3, title: "Метод Сократа", description: "Сделай самостоятельный вывод и закрепи понимание без зубрежки." }
+                    { step: 3, title: "Метод Сократа", description: "Сделай самостоятельный вывод и закрепи понимание без зубрёжки." }
                 ],
                 analogy: {
                     title: "Метод Сократа",
-                    narrative: "«Знание существует для того, чтобы им делиться свободно». Мы учим понимать законы природы через логику и наводящие вопросы!"
+                    narrative: "«Знание существует для того, чтобы им делиться». Мы учим понимать законы природы через логику и наводящие вопросы!"
                 },
                 socratic_question: "Хочешь узнать, как Закон Ома ($I = U / R$) объясняется через поток воды в трубе?",
-                source: "ФГОС РФ • GNU GPLv3"
+                source: "ФГОС РФ • MAX"
             };
         }
 
-        // Обновляем имя, если Python применил цензуру
         if (greetingData.username) {
             currentUsername = greetingData.username;
-            localStorage.setItem("nz_user", currentUsername);
-            if (currentUserLabel) currentUserLabel.textContent = currentUsername;
+            updateProfileDisplay(currentUsername);
         }
 
         renderBotBubble(greetingData, true);
     }
 
+    // Авторизация через MAX Bridge (window.WebApp.initDataUnsafe.user)
+    const maxUser = MaxBridge.getUser();
+    if (maxUser) {
+        console.log("[MAX Bridge] Авторизован пользователь платформы MAX:", maxUser);
+        updateProfileDisplay(maxUser.displayName, maxUser);
+
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.sync_max_user === "function") {
+            window.pywebview.api.sync_max_user(maxUser).catch(console.warn);
+        }
+
+        // Пропускаем приветственный экран при наличии данных MAX Bridge
+        onboardingScreen.style.display = "none";
+        chatScreen.style.display = "flex";
+
+        if (sessions.length === 0) {
+            createNewSession("Диалог Сократа");
+            initSessionGreeting();
+        } else {
+            switchSession(sessions[0].id);
+        }
+    } else {
+        updateProfileDisplay(currentUsername);
+    }
+
     onboardingForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const rawName = usernameInput.value.trim();
+        MaxBridge.triggerHaptic("light");
 
+        const rawName = usernameInput.value.trim();
         let warning = null;
         let sanitizedName = rawName || "Пользователь";
 
-        // Проверяем через бэкенд Python (строгая валидация)
         if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.set_user_name === "function") {
             try {
                 const res = await window.pywebview.api.set_user_name(rawName);
@@ -597,158 +896,48 @@ document.addEventListener("DOMContentLoaded", () => {
                     warning = res.warning || null;
                 }
             } catch (err) {
-                console.error("Ошибка проверки имени:", err);
+                console.error("Ошибка валидации через API:", err);
+            }
+        } else {
+            const cyrillicRegex = /^[А-Яа-яЁё]+(?:-[А-Яа-яЁё]+)*$/;
+            if (!cyrillicRegex.test(rawName)) {
+                warning = "Поле содержит недопустимые символы. Пожалуйста, используйте стандартный формат имени (только кириллица).";
+                sanitizedName = "Пользователь";
+            } else {
+                sanitizedName = rawName.split("-").map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join("-");
             }
         }
 
-        currentUsername = sanitizedName;
-        localStorage.setItem("nz_user", currentUsername);
-        if (currentUserLabel) currentUserLabel.textContent = currentUsername;
+        if (warning) {
+            if (onboardingWarning) {
+                onboardingWarning.style.display = "flex";
+                const wText = document.getElementById("warning-text");
+                if (wText) wText.textContent = warning;
+            }
+        }
 
-        // Переключаем экран
+        updateProfileDisplay(sanitizedName);
+
+        // Переключение экрана онбординга на рабочий чат
         onboardingScreen.style.display = "none";
         chatScreen.style.display = "flex";
 
-        // Создаем стартовую сессию и выводим приветствие
-        createNewSession("Стартовый диалог");
-        await initSessionGreeting();
+        if (sessions.length === 0) {
+            createNewSession("Первый диалог");
+            initSessionGreeting();
+        } else {
+            switchSession(sessions[0].id);
+        }
+
         userInput.focus();
     });
 
     // =========================================================================
-    // 10. ПРИКРЕПЛЕНИЕ ДОКУМЕНТОВ И ФОТО (НАТИВНЫЙ API)
+    // 11. АВТОРЕГУЛИРОВКА ТЕКСТОВОГО ПОЛЯ И ПРИКРЕПЛЕНИЕ МАТЕРИАЛОВ
     // =========================================================================
-    attachBtn.addEventListener("click", () => {
-        if (isWaitingForResponse) return;
-        attachModal.style.display = "flex";
-    });
-
-    const closeAttachModal = () => { attachModal.style.display = "none"; };
-    if (closeAttachModalBtn) closeAttachModalBtn.addEventListener("click", closeAttachModal);
-    attachModal.addEventListener("click", (e) => {
-        if (e.target === attachModal) closeAttachModal();
-    });
-
-    modalAttachDocBtn.addEventListener("click", async () => {
-        closeAttachModal();
-        if (isWaitingForResponse) return;
-
-        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.attach_document === "function") {
-            try {
-                const res = await window.pywebview.api.attach_document();
-                if (res && res.success && !res.cancelled) {
-                    renderFileBubble(res, true);
-                    renderBotBubble({
-                        title: "Свободная память",
-                        message: res.bot_reply || `Файл **${res.filename}** успешно загружен в мою свободную память.\n\nКакую задачу или формулу из этого документа разберём методом Сократа?`,
-                        source: "Свободная память • ФГОС RAG"
-                    }, true);
-                }
-            } catch (err) {
-                console.error("Ошибка прикрепления документа:", err);
-            }
-        } else {
-            // Тестовый fallback для браузера
-            const mock = { filename: "uchebnik_fiziki_8kl.pdf", filesize: "520 КБ", type: "document" };
-            renderFileBubble(mock, true);
-            renderBotBubble({
-                message: `Файл **${mock.filename}** успешно загружен в мою свободную память.\n\nКакую задачу или формулу из него мы разберём?`,
-                source: "Тестовая свободная память"
-            }, true);
-        }
-    });
-
-    modalAttachPhotoBtn.addEventListener("click", async () => {
-        closeAttachModal();
-        if (isWaitingForResponse) return;
-
-        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.attach_photo === "function") {
-            try {
-                const res = await window.pywebview.api.attach_photo();
-                if (res && res.success && !res.cancelled) {
-                    renderFileBubble(res, true);
-                    renderBotBubble({
-                        title: "Свободная память",
-                        message: res.bot_reply || `Файл **${res.filename}** успешно загружен в мою свободную память.\n\nЯ вижу снимок условия задачи или схемы цепи. Какую величину требуется определить?`,
-                        source: "Свободная память • ФГОС RAG"
-                    }, true);
-                }
-            } catch (err) {
-                console.error("Ошибка прикрепления фото:", err);
-            }
-        } else {
-            // Тестовый fallback для браузера
-            const mock = { filename: "shema_cepi_resistor.png", filesize: "1.4 МБ", type: "photo" };
-            renderFileBubble(mock, true);
-            renderBotBubble({
-                message: `Файл **${mock.filename}** успешно загружен в мою свободную память.\n\nЯ вижу чертёж электрической цепи. Какую величину требуется определить?`,
-                source: "Тестовая свободная память"
-            }, true);
-        }
-    });
-
-    // =========================================================================
-    // 11. ДЕЙСТВИЯ САЙДБАРА И ШАПКИ
-    // =========================================================================
-    // Кнопка "Новый диалог"
-    if (newChatBtn) {
-        newChatBtn.addEventListener("click", () => {
-            messagesContainer.innerHTML = "";
-            createNewSession("Новый диалог");
-            initSessionGreeting();
-            userInput.focus();
-            if (appSidebar) appSidebar.classList.remove("mobile-open");
-        });
-    }
-
-    // Кнопка "Очистить"
-    if (clearChatBtn) {
-        clearChatBtn.addEventListener("click", () => {
-            messagesContainer.innerHTML = "";
-            let sess = sessions.find(s => s.id === currentSessionId);
-            if (sess) {
-                sess.messages = [];
-                saveSessionsToStorage();
-            }
-            renderBotBubble({
-                title: "Диалог очищен",
-                message: `История сообщений текущей сессии очищена, **${currentUsername}**! Твоя локальная приватность защищена.\n\nЗадай мне любой вопрос по школьной программе ФГОС.`,
-                source: "Приватность • GPLv3"
-            }, true);
-        });
-    }
-
-    // Модальное окно "О проекте"
-    if (aboutBtn) {
-        aboutBtn.addEventListener("click", () => { aboutModal.style.display = "flex"; });
-    }
-    const closeAboutModal = () => { aboutModal.style.display = "none"; };
-    if (closeAboutModalBtn) closeAboutModalBtn.addEventListener("click", closeAboutModal);
-    if (modalOkBtn) modalOkBtn.addEventListener("click", closeAboutModal);
-    aboutModal.addEventListener("click", (e) => {
-        if (e.target === aboutModal) closeAboutModal();
-    });
-
-    // Кнопка Тукса в шапке
-    if (headerTuxBtn) {
-        headerTuxBtn.addEventListener("click", () => {
-            renderBotBubble(getTuxResponse(), true);
-        });
-    }
-
-    // Мобильный переключатель сайдбара
-    if (mobileMenuToggle && appSidebar) {
-        mobileMenuToggle.addEventListener("click", () => {
-            appSidebar.classList.toggle("mobile-open");
-        });
-    }
-
-    // =========================================================================
-    // 12. ОБРАБОТЧИКИ ПОЛЯ ВВОДА ТЕКСТА
-    // =========================================================================
-    chatForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        sendMessage();
+    userInput.addEventListener("input", () => {
+        userInput.style.height = "auto";
+        userInput.style.height = Math.min(userInput.scrollHeight, 140) + "px";
     });
 
     userInput.addEventListener("keydown", (e) => {
@@ -758,11 +947,130 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    userInput.addEventListener("input", () => {
-        userInput.style.height = "auto";
-        userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
+    chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        sendMessage();
     });
 
-    // Первоначальный рендер истории сессий
-    renderSessionHistory();
+    // Модальное окно "Прикрепить файл"
+    function openAttachModal() {
+        MaxBridge.triggerHaptic("light");
+        attachModal.style.display = "flex";
+        MaxBridge.updateBackState();
+    }
+
+    function closeAttachModal() {
+        attachModal.style.display = "none";
+        MaxBridge.updateBackState();
+    }
+
+    attachBtn.addEventListener("click", openAttachModal);
+    closeAttachModalBtn.addEventListener("click", closeAttachModal);
+    attachModal.addEventListener("click", (e) => {
+        if (e.target === attachModal) closeAttachModal();
+    });
+
+    modalAttachDocBtn.addEventListener("click", async () => {
+        closeAttachModal();
+        if (isWaitingForResponse) return;
+        MaxBridge.triggerHaptic("light");
+
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.attach_document === "function") {
+            try {
+                const res = await window.pywebview.api.attach_document();
+                if (res && res.success && !res.cancelled) {
+                    renderFileBubble(res, true);
+                    renderBotBubble({
+                        title: "Память ассистента",
+                        message: res.bot_reply || `Файл **${res.filename}** успешно загружен в память ассистента.\n\nКакую задачу или формулу из этого документа разберём по методу Сократа?`,
+                        source: "Память ассистента • ФГОС RAG"
+                    }, true);
+                }
+            } catch (err) {
+                console.error("Ошибка прикрепления документа:", err);
+            }
+        } else {
+            const mock = { filename: "uchebnik_fiziki_8kl.pdf", filesize: "520 КБ", type: "document" };
+            renderFileBubble(mock, true);
+            renderBotBubble({
+                message: `Файл **${mock.filename}** успешно загружен в память ассистента.\n\nКакую задачу или формулу из него мы разберём?`,
+                source: "Память ассистента"
+            }, true);
+        }
+    });
+
+    modalAttachPhotoBtn.addEventListener("click", async () => {
+        closeAttachModal();
+        if (isWaitingForResponse) return;
+        MaxBridge.triggerHaptic("light");
+
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.attach_photo === "function") {
+            try {
+                const res = await window.pywebview.api.attach_photo();
+                if (res && res.success && !res.cancelled) {
+                    renderFileBubble(res, true);
+                    renderBotBubble({
+                        title: "Память ассистента",
+                        message: res.bot_reply || `Файл **${res.filename}** успешно загружен в память ассистента.\n\nЯ вижу снимок условия задачи или схемы цепи. Какую величину требуется определить?`,
+                        source: "Память ассистента • ФГОС RAG"
+                    }, true);
+                }
+            } catch (err) {
+                console.error("Ошибка прикрепления фото:", err);
+            }
+        } else {
+            const mock = { filename: "shema_cepi_resistor.png", filesize: "1.4 МБ", type: "photo" };
+            renderFileBubble(mock, true);
+            renderBotBubble({
+                message: `Файл **${mock.filename}** успешно загружен в память ассистента.\n\nЯ вижу чертёж электрической цепи. Какую величину требуется определить?`,
+                source: "Память ассистента"
+            }, true);
+        }
+    });
+
+    // =========================================================================
+    // 12. ДЕЙСТВИЯ САЙДБАРА И ШАПКИ
+    // =========================================================================
+    if (newChatBtn) {
+        newChatBtn.addEventListener("click", () => {
+            MaxBridge.triggerHaptic("light");
+            messagesContainer.innerHTML = "";
+            createNewSession("Новый диалог");
+            initSessionGreeting();
+            userInput.focus();
+            if (appSidebar) appSidebar.classList.remove("mobile-open");
+            MaxBridge.updateBackState();
+        });
+    }
+
+    function openAboutModal() {
+        MaxBridge.triggerHaptic("light");
+        aboutModal.style.display = "flex";
+        MaxBridge.updateBackState();
+    }
+
+    function closeAboutModal() {
+        aboutModal.style.display = "none";
+        MaxBridge.updateBackState();
+    }
+
+    if (aboutBtn) aboutBtn.addEventListener("click", openAboutModal);
+    if (headerTuxBtn) headerTuxBtn.addEventListener("click", openAboutModal);
+    if (closeAboutModalBtn) closeAboutModalBtn.addEventListener("click", closeAboutModal);
+    if (modalOkBtn) modalOkBtn.addEventListener("click", closeAboutModal);
+
+    if (aboutModal) {
+        aboutModal.addEventListener("click", (e) => {
+            if (e.target === aboutModal) closeAboutModal();
+        });
+    }
+
+    // Мобильный тоггл панели сайдбара
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener("click", () => {
+            MaxBridge.triggerHaptic("light");
+            appSidebar.classList.toggle("mobile-open");
+            MaxBridge.updateBackState();
+        });
+    }
 });

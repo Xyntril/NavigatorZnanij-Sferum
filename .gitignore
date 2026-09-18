@@ -5,4 +5,5 @@ venv/
 __pycache__/
 local_data.db
 .env
-blacklist.json
+/blacklist.json
+!backend/blacklist.json

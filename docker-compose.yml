@@ -1,0 +1,22 @@
+version: '3.8'
+
+# ==============================================================================
+# docker-compose.yml — Контейнеризация сервиса «Навигатор Знаний»
+# Хакатон «Идея фикс» платформы Сферум (Продвинутая разработка)
+# ==============================================================================
+
+services:
+  navigator-znanij:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: navigator-znanij-sferum
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - NAVIGATOR_DEBUG=0
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    network_mode: host
+    ipc: host
+    restart: unless-stopped
